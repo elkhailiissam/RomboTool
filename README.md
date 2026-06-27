@@ -1,19 +1,26 @@
 # ⚡ RomboTool
 
-High-performance combo list filter and cleaner. Built with a pure C engine for speed and a WPF interface for ease of use.
+A cross-platform desktop toolkit with two features in one app:
+
+1. **Combo Filter** — clean messy combo lists into tidy `user:pass` pairs (pure-C engine).
+2. **Grep Search** — a fast, [BareGrep](https://www.baremetalsoft.com/baregrep/)-style regex search over folders.
+
+Built with a pure **C** engine for combo filtering and a cross-platform **Avalonia (.NET 8)** GUI that runs natively on **macOS, Linux, and Windows**.
 
 ```
-  ██████╗  ██████╗ ███╗   ███╗██████╗  ██████╗ ████████╗ ██████╗  ██████╗ ██╗     
-  ██╔══██╗██╔═══██╗████╗ ████║██╔══██╗██╔═══██╗╚══██╔══╝██╔═══██╗██╔═══██╗██║     
-  ██████╔╝██║   ██║██╔████╔██║██████╔╝██║   ██║   ██║   ██║   ██║██║   ██║██║     
-  ██╔══██╗██║   ██║██║╚██╔╝██║██╔══██╗██║   ██║   ██║   ██║   ██║██║   ██║██║     
+  ██████╗  ██████╗ ███╗   ███╗██████╗  ██████╗ ████████╗ ██████╗  ██████╗ ██╗
+  ██╔══██╗██╔═══██╗████╗ ████║██╔══██╗██╔═══██╗╚══██╔══╝██╔═══██╗██╔═══██╗██║
+  ██████╔╝██║   ██║██╔████╔██║██████╔╝██║   ██║   ██║   ██║   ██║██║   ██║██║
+  ██╔══██╗██║   ██║██║╚██╔╝██║██╔══██╗██║   ██║   ██║   ██║   ██║██║   ██║██║
   ██║  ██║╚██████╔╝██║ ╚═╝ ██║██████╔╝╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗
   ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═════╝  ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝
 ```
 
-## What It Does
+---
 
-Takes messy combo lists with URLs, garbage, duplicates and extracts clean `user:pass` pairs.
+## 1. Combo Filter
+
+Takes messy combo lists with URLs, garbage, and duplicates and extracts clean `user:pass` pairs.
 
 **Input (chaos):**
 ```
@@ -33,141 +40,109 @@ john_doe:secret456
 user@test.com:pass123
 ```
 
-## Features
+Features: fast pure-C engine (500K+ lines/sec), O(1) hash dedup, email/user/phone
+detection, URL/spam/path stripping, "emails only" / "usernames only" filters.
 
-- **Fast**: Pure C engine processes 500K+ lines/second
-- **Smart Parsing**: Handles chaotic formats automatically
-- **Deduplication**: O(1) hash-based duplicate removal
-- **Multi-Format**: Supports email:pass, user:pass, phone:pass
-- **Garbage Filter**: Strips URLs, spam, file paths, promotional text
-- **Cross-Platform CLI**: Works on Windows, Linux, macOS
-- **Windows GUI**: Modern WPF interface with drag-and-drop
+## 2. Grep Search
+
+A friendly regex file searcher modeled on BareGrep:
+
+- **Folder** to search, with optional **Subfolders** recursion.
+- **Files** filter using space-separated DOS globs (e.g. `*.txt *.log *.cs`).
+- **Text** as a literal or **Regex**, with **Ignore Case** and **Invert** options.
+- Parallel search across CPU cores, binary files auto-skipped (NUL-byte heuristic),
+  256 MB per-file cap.
+- Results grid (File · Line · Text). **Double-click a result to open the file** in your
+  default editor. Press **Enter** in the Text box to search.
+
+The search engine is a dependency-free C# port of the
+[GrepRipper](https://github.com/rwasef1830/grepripper) engine (itself a BareGrep clone),
+with the Windows-only `libmagic` dependency removed.
+
+---
 
 ## Project Structure
 
 ```
 RomboTool/
 ├── core/
-│   └── rombofilter.c    # C filter engine (~200 lines)
-├── gui/
-│   ├── App.xaml         # WPF app definition
-│   ├── MainWindow.xaml  # UI layout
-│   ├── MainWindow.xaml.cs # UI logic
-│   └── RomboTool.csproj # .NET 8 project
-├── build.sh             # Linux build script
-├── build.bat            # Windows build script
+│   └── rombofilter.c           # C combo-filter engine + CLI
+├── gui/                        # Avalonia (.NET 8) cross-platform GUI
+│   ├── Program.cs              # entry point
+│   ├── App.axaml(.cs)          # app + theme/styles
+│   ├── MainWindow.axaml(.cs)   # two-tab UI + wiring
+│   ├── Engine/
+│   │   ├── ComboFilterEngine.cs  # C# combo parser (used by the GUI)
+│   │   └── GrepEngine.cs         # cross-platform regex searcher
+│   ├── Assets/                 # app icon (make_icon.py → icon.png + RomboTool.icns)
+│   └── RomboTool.csproj
+├── build.sh                    # build CLI + GUI (macOS/Linux)
+├── run.sh                      # launch the GUI
+├── package-mac.sh             # build dist/RomboTool.app (with icon)
+├── make-icon.sh               # regenerate the app icon
 └── .gitignore
 ```
 
+## Requirements
+
+- **GUI:** [.NET 8 SDK](https://dotnet.microsoft.com/download) (runs on macOS, Linux, Windows).
+- **CLI:** a C compiler (`clang` on macOS, `gcc` on Linux).
+
 ## Building
 
-### Linux/macOS (CLI only)
+```bash
+./build.sh          # builds the C CLI and the GUI
+./build.sh cli      # just the C engine
+./build.sh gui      # just the GUI
+```
+
+## Running
+
+### GUI (macOS / Linux / Windows)
 
 ```bash
-chmod +x build.sh
-./build.sh
+./run.sh
+# or
+dotnet run --project gui -c Release
 ```
 
-Or manually:
-```bash
-cd core
-gcc -O3 -o rombofilter rombofilter.c
-```
+### Install as a macOS app
 
-### Windows (CLI + GUI)
-
-```batch
-build.bat
-```
-
-Or manually:
-```batch
-cd core
-gcc -O3 -o rombofilter.exe rombofilter.c
-
-cd ..\gui
-dotnet build -c Release
-```
-
-## Usage
-
-### CLI
+Build a double-clickable `RomboTool.app` (with icon) and drop it in `/Applications`:
 
 ```bash
-# Basic
-./rombofilter input.txt output.txt
-
-# With deduplication (recommended)
-./rombofilter input.txt output.txt -d
+./package-mac.sh                              # creates dist/RomboTool.app
+cp -R dist/RomboTool.app /Applications/       # install
+open /Applications/RomboTool.app              # launch
 ```
 
-**Example:**
+Regenerate the icon anytime with `./make-icon.sh` (needs Python + Pillow).
+
+### Combo Filter CLI
+
+```bash
+cd core && clang -O3 -o rombofilter rombofilter.c   # (build.sh does this)
+
+./rombofilter input.txt output.txt        # basic
+./rombofilter input.txt output.txt -d     # with deduplication (recommended)
+```
+
 ```
 $ ./rombofilter combos.txt clean.txt -d
-
-  ██████╗  ██████╗ ███╗   ███╗██████╗  ██████╗ ...
-  
-[*] Input:  combos.txt
-[*] Output: clean.txt
-[*] Dedup:  ON
-
-═══════════════════════════════════════════════════════
   Total: 9003 | Valid: 3778 | Emails: 1350 | Users: 2390 | Phones: 42
   Duplicates: 4831 | Invalid: 394 | Rate: 42.0%
-═══════════════════════════════════════════════════════
 [+] Saved to: clean.txt
 ```
 
-### GUI (Windows)
+## How the Combo Filter Works
 
-1. Run `RomboTool.exe`
-2. Drag & drop files (or click Browse)
-3. Configure options:
-   - ✅ Remove Duplicates
-   - ☐ Emails Only
-   - ☐ Usernames Only
-4. Click **Start**
-5. Output saved automatically
+1. **Email detection** — find `@` with a valid domain, take the next field as password.
+2. **Phone detection** — find an 8–15 digit number, take the next field as password.
+3. **URL/garbage stripping** — skip parts containing `http`, `.com/`, `/auth/`, file
+   paths (`Browser/`, `Chrome_`, `.txt:`), and spam markers.
+4. **Fallback** — take the last valid `user`/`pass` pair on the line.
 
-## How It Works
-
-The filter uses multiple parsing strategies:
-
-1. **Email Detection**: Find `@` with valid domain, take next field as password
-2. **Phone Detection**: Find 8-15 digit number, take next field as password
-3. **URL Stripping**: Skip parts containing `http`, `.com/`, `/auth/`, etc.
-4. **Fallback**: Take last two valid-looking fields
-
-**Garbage Detection:**
-- URLs and domains
-- File paths (`Browser/`, `Chrome_`, `.txt:`)
-- Spam (`@kingulp`, `t.me/+`, `MonkeyBase`, `You can buy`)
-- Malformed lines (semicolons, `//` prefix)
-
-**Password Validation:**
-- Length: 4-128 characters
-- Must contain alphanumeric
-- Not just `http`, `https`, or domain endings
-
-## Performance
-
-| Lines | Time | Rate |
-|-------|------|------|
-| 100K | 0.2s | 500K/s |
-| 1M | 1.8s | 555K/s |
-| 10M | 18s | 555K/s |
-
-Memory usage: ~8MB for deduplication hash table (1M entries)
-
-## Requirements
-
-**CLI:**
-- GCC or Clang
-- Any OS
-
-**GUI:**
-- Windows 10/11
-- .NET 8.0 Runtime
+Password validation: length 4–128, must contain alphanumerics, not a bare URL fragment.
 
 ## License
 

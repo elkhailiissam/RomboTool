@@ -5,8 +5,15 @@ obj/
 *.exe
 *.dll
 *.so
+*.dylib
 *.o
 *.a
+# Compiled C CLI (extensionless)
+core/rombofilter
+
+# Generated icon intermediates (icon.png + RomboTool.icns are committed; these are regenerable)
+gui/Assets/icon_1024.png
+gui/Assets/*.iconset
 
 # IDE
 .vs/

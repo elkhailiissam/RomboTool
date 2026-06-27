@@ -1,0 +1,170 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RomboTool.MainWindow"
+        Icon="/Assets/icon.png"
+        Title="RomboTool" Width="1100" Height="740"
+        MinWidth="820" MinHeight="560"
+        Background="#1E1E1E"
+        WindowStartupLocation="CenterScreen">
+
+    <DockPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top" Background="#252526" Padding="16,10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="⚡ RomboTool" FontSize="22" FontWeight="Bold" Foreground="White" />
+                <TextBlock Text="v2.0" FontSize="12" Foreground="#777" VerticalAlignment="Bottom" Margin="0,0,0,4" />
+            </StackPanel>
+        </Border>
+
+        <TabControl Margin="8" Padding="0">
+
+            <!-- ============================= GREP SEARCH ============================= -->
+            <TabItem Header="Grep Search" FontSize="14">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="10">
+
+                    <!-- Folder -->
+                    <Grid Grid.Row="0" ColumnDefinitions="64,*,Auto,Auto" Margin="0,0,0,6">
+                        <TextBlock Grid.Column="0" Text="Folder" Classes="label" />
+                        <TextBox Grid.Column="1" x:Name="FolderBox" Watermark="/path/to/search" />
+                        <Button Grid.Column="2" Content="Browse" Click="OnBrowseFolder" Margin="6,0,0,0" />
+                        <CheckBox Grid.Column="3" x:Name="RecurseChk" Content="Subfolders" IsChecked="True" Margin="10,0,0,0" />
+                    </Grid>
+
+                    <!-- Files -->
+                    <Grid Grid.Row="1" ColumnDefinitions="64,*" Margin="0,0,0,6">
+                        <TextBlock Grid.Column="0" Text="Files" Classes="label" />
+                        <TextBox Grid.Column="1" x:Name="FilesBox" Text="*" Watermark="*.txt *.log  (space separated)" />
+                    </Grid>
+
+                    <!-- Text + options -->
+                    <Grid Grid.Row="2" ColumnDefinitions="64,*,Auto,Auto,Auto" Margin="0,0,0,8">
+                        <TextBlock Grid.Column="0" Text="Text" Classes="label" />
+                        <TextBox Grid.Column="1" x:Name="SearchTextBox" Watermark="text or regex to find…" KeyDown="OnSearchKeyDown" />
+                        <CheckBox Grid.Column="2" x:Name="RegexChk" Content="Regex" Margin="10,0,0,0" />
+                        <CheckBox Grid.Column="3" x:Name="IgnoreCaseChk" Content="Ignore Case" IsChecked="True" Margin="10,0,0,0" />
+                        <CheckBox Grid.Column="4" x:Name="InvertChk" Content="Invert" Margin="10,0,0,0" />
+                    </Grid>
+
+                    <!-- Actions -->
+                    <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*" Margin="0,0,0,8">
+                        <Button Grid.Column="0" x:Name="SearchBtn" Content="Search" Classes="go" MinWidth="110" Click="OnRunGrep" />
+                        <Button Grid.Column="1" x:Name="StopBtn" Content="Stop" Margin="8,0,0,0" IsEnabled="False" Click="OnStopGrep" />
+                        <ProgressBar Grid.Column="2" x:Name="GrepProgress" Height="6" Margin="14,0,0,0"
+                                     VerticalAlignment="Center" Minimum="0" Maximum="1" Value="0" />
+                    </Grid>
+
+                    <!-- Results -->
+                    <Border Grid.Row="4" Background="#161616" CornerRadius="6">
+                        <DataGrid x:Name="ResultsGrid"
+                                  IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal"
+                                  HeadersVisibility="Column"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="False"
+                                  SelectionMode="Single"
+                                  DoubleTapped="OnOpenResult"
+                                  Background="Transparent"
+                                  FontFamily="Cascadia Code,Cascadia Mono,Menlo,Consolas,monospace"
+                                  FontSize="12.5">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="240" />
+                                <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" Width="70" />
+                                <DataGridTextColumn Header="Text" Binding="{Binding Line}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <TextBlock Grid.Row="5" x:Name="GrepStatus" Text="Ready — double-click a result to open it."
+                               Foreground="#888" Margin="2,8,0,0" />
+                </Grid>
+            </TabItem>
+
+            <!-- ============================= COMBO FILTER ============================= -->
+            <TabItem Header="Combo Filter" FontSize="14">
+                <Grid ColumnDefinitions="*,12,*" Margin="10">
+
+                    <!-- Left: input -->
+                    <Border Grid.Column="0" Background="#252526" CornerRadius="8" Padding="16">
+                        <Grid RowDefinitions="Auto,*,Auto">
+                            <StackPanel Grid.Row="0" Spacing="4">
+                                <TextBlock Text="Input Files" FontSize="15" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Drag &amp; drop files here, or browse" Foreground="#888" Margin="0,0,0,8" />
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox Grid.Column="0" x:Name="InputBox" IsReadOnly="True" Text="No files…" />
+                                    <Button Grid.Column="1" Content="Browse" Classes="accent" Margin="6,0,0,0" Click="OnAddFiles" />
+                                    <Button Grid.Column="2" Content="Clear" Margin="6,0,0,0" Click="OnClearFiles" />
+                                </Grid>
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Background="#161616" CornerRadius="6" Margin="0,12" Padding="10">
+                                <TextBox x:Name="Preview" Background="Transparent" Foreground="#AADDAA"
+                                         FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12"
+                                         IsReadOnly="True" BorderThickness="0" AcceptsReturn="True"
+                                         TextWrapping="NoWrap" Text="Preview…" />
+                            </Border>
+
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Files" Foreground="#888" />
+                                    <TextBlock x:Name="FileCount" Text="0" Classes="stat" Foreground="White" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Lines" Foreground="#888" />
+                                    <TextBlock x:Name="LineCount" Text="0" Classes="stat" Foreground="White" />
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: settings + output -->
+                    <Border Grid.Column="2" Background="#252526" CornerRadius="8" Padding="16">
+                        <Grid RowDefinitions="Auto,*,Auto,Auto">
+                            <StackPanel Grid.Row="0" Spacing="8">
+                                <TextBlock Text="Settings" FontSize="15" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,4" />
+                                <CheckBox x:Name="DedupChk" Content="Remove Duplicates" IsChecked="True" />
+                                <CheckBox x:Name="EmailOnlyChk" Content="Emails Only" />
+                                <CheckBox x:Name="UserOnlyChk" Content="Usernames Only" />
+                                <TextBlock Text="Output" Foreground="#888" Margin="0,6,0,2" />
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0" x:Name="OutBox" Text="filtered.txt" />
+                                    <Button Grid.Column="1" Content="Save As" Margin="6,0,0,0" Click="OnChooseOutput" />
+                                </Grid>
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Background="#161616" CornerRadius="6" Margin="0,12" Padding="10">
+                                <TextBox x:Name="Output" Background="Transparent" Foreground="#AAAADD"
+                                         FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12"
+                                         IsReadOnly="True" BorderThickness="0" AcceptsReturn="True"
+                                         TextWrapping="NoWrap" Text="Output preview…" />
+                            </Border>
+
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" Margin="0,0,0,10">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Valid" Foreground="#888" />
+                                    <TextBlock x:Name="ValidStat" Text="0" Classes="stat" Foreground="#28A745" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Emails" Foreground="#888" />
+                                    <TextBlock x:Name="EmailStat" Text="0" Classes="stat" Foreground="#007ACC" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Users" Foreground="#888" />
+                                    <TextBlock x:Name="UserStat" Text="0" Classes="stat" Foreground="#FFA500" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="Phones" Foreground="#888" />
+                                    <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" Foreground="#9B59B6" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" x:Name="ComboStatus" Text="Ready" Foreground="#888" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" x:Name="ComboGoBtn" Content="🚀 Start" Classes="go" MinWidth="140" Click="OnRunCombo" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
