@@ -18,7 +18,7 @@
                     </Border>
                     <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                         <TextBlock Text="RomboTool" Classes="title" VerticalAlignment="Center" />
-                        <TextBlock Text="3.2" Classes="subtitle" VerticalAlignment="Center" />
+                        <TextBlock Text="3.3" Classes="subtitle" VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
 
@@ -94,7 +94,7 @@
                                         <CheckBox x:Name="MultilineChk" Content="Multiline" Margin="0,0,18,0" />
                                     </WrapPanel>
                                     <Grid ColumnDefinitions="Auto,Auto,*">
-                                        <CheckBox Grid.Column="0" x:Name="LimitChk" Content="Stop after" IsChecked="True"
+                                        <CheckBox Grid.Column="0" x:Name="LimitChk" Content="Stop after"
                                                   Margin="0,0,8,0" VerticalAlignment="Center" />
                                         <NumericUpDown Grid.Column="1" x:Name="LimitBox" Value="50000" Minimum="1"
                                                        Maximum="1000000000" Increment="10000" Width="150" FormatString="N0" />

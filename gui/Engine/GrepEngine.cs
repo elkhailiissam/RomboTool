@@ -72,9 +72,6 @@ public readonly record struct GrepProgress(
 /// </summary>
 public static class GrepEngine
 {
-    /// <summary>Folder-mode files bigger than this are skipped (single-file mode has no cap).</summary>
-    public const long FolderMaxFileSize = 8L * 1024 * 1024 * 1024;
-
     const int ReadBufferSize = 1 << 20;          // 1 MiB read chunks
     const int MaxLineBytes = 64 * 1024;          // longest line we keep; overflow is truncated
     const int PreviewContextBefore = 48;         // chars kept before the match in a snippet
@@ -224,13 +221,12 @@ public static class GrepEngine
         state.CurrentFile = System.IO.Path.GetFileName(file);
         List<GrepMatch>? matches = null;
         long length = 0, counted = 0;
-        bool fileHadMatch = false;
+        bool fileHadMatch = false, aborted = false;
 
         try
         {
             try { length = new FileInfo(file).Length; } catch { length = 0; }
             if (length == 0) return;
-            if (!o.IsSingleFile && length > FolderMaxFileSize) return;
 
             using var stream = new FileStream(
                 file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
@@ -290,15 +286,16 @@ public static class GrepEngine
             }
             if (lineLen > 0) Flush();   // trailing line without newline
         }
-        catch (StopSearch) { }
-        catch (OperationCanceledException) { }
+        catch (StopSearch) { aborted = true; }             // hit the match limit
+        catch (OperationCanceledException) { aborted = true; }  // user cancelled
         catch { /* unreadable file: skip, keep going */ }
         finally
         {
             if (matches is { Count: > 0 }) onFileMatches(matches);
-            // Account for bytes we didn't stream (binary/oversize skip, early stop, errors)
-            // so the aggregate progress bar always reaches its total.
-            if (length > counted) Interlocked.Add(ref state.BytesDone, length - counted);
+            // Reconcile the bar to the file's full size ONLY when it finished or was skipped
+            // wholesale (binary sniff / error). When we stopped mid-read (limit or cancel),
+            // leave the counter at the real bytes read so progress reflects reality.
+            if (!aborted && length > counted) Interlocked.Add(ref state.BytesDone, length - counted);
             if (fileHadMatch) Interlocked.Increment(ref state.FilesWithMatches);
             Interlocked.Increment(ref state.FilesDone);
             report(false);   // throttled; SearchAsync sends the definitive final snapshot

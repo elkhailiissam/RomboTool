@@ -243,17 +243,29 @@ public partial class MainWindow : Window
             _grepSw.Stop();
             _grepTimer.Stop();
             RenderGrepStats();
-            GrepProgress.Value = 1;
-            StatPercent.Text = "100%";
 
             var fin = GrepProg;
+            bool cancelled = _grepCancel.IsCancellationRequested;
+            bool limitHit = options.MaxMatches > 0 && fin.MatchCount >= options.MaxMatches && !cancelled;
+            bool completed = !cancelled && !limitHit;
+
+            // Only a genuine finish reaches 100%; a limit/cancel stop keeps the true byte progress.
+            if (completed) { GrepProgress.Value = 1; StatPercent.Text = "100%"; }
+
+            double pctScanned = fin.BytesTotal > 0 ? 100.0 * fin.BytesDone / fin.BytesTotal : 100;
+            string where = $"{pctScanned:F1}% ({HumanBytes(fin.BytesScanned)} of {HumanBytes(fin.BytesTotal)})";
             var capNote = _grepCapped ? $" · showing first {MaxDisplayedMatches:N0}" : "";
             var filesNote = fin.FilesTotal > 1 ? $" across {fin.FilesWithMatches:N0}/{fin.FilesTotal:N0} files" : "";
-            StatCurrent.Text = _grepCancel.IsCancellationRequested
-                ? $"Stopped — {fin.MatchCount:N0} matches so far{capNote}."
-                : $"Done — {fin.MatchCount:N0} matches{filesNote} in {_grepSw.Elapsed.TotalSeconds:F2}s{capNote}.";
 
-            if (fin.MatchCount == 0 && !_grepCancel.IsCancellationRequested)
+            if (cancelled)
+                StatCurrent.Text = $"Stopped at {where} — {fin.MatchCount:N0} matches{capNote}.";
+            else if (limitHit)
+                StatCurrent.Text = $"Reached your {options.MaxMatches:N0}-match limit at {where}. " +
+                                   $"Turn off “Stop after” to scan the rest{capNote}.";
+            else
+                StatCurrent.Text = $"Done — {fin.MatchCount:N0} matches{filesNote} in {_grepSw.Elapsed.TotalSeconds:F1}s{capNote}.";
+
+            if (fin.MatchCount == 0 && completed)
             {
                 EmptyTitle.Text = "No matches found";
                 EmptyHint.Text = $"“{text}” wasn't found. Try turning off Whole word / case sensitivity, or check the source.";
