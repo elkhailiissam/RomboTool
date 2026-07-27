@@ -2,62 +2,134 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="RomboTool.MainWindow"
         Icon="/Assets/icon.png"
-        Title="RomboTool" Width="1100" Height="740"
-        MinWidth="820" MinHeight="560"
-        Background="#1E1E1E"
+        Title="RomboTool" Width="1180" Height="780"
+        MinWidth="900" MinHeight="600"
+        Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterScreen">
 
     <DockPanel>
         <!-- Header -->
-        <Border DockPanel.Dock="Top" Background="#252526" Padding="16,10">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="⚡ RomboTool" FontSize="22" FontWeight="Bold" Foreground="White" />
-                <TextBlock Text="v2.0" FontSize="12" Foreground="#777" VerticalAlignment="Bottom" Margin="0,0,0,4" />
+        <Border DockPanel.Dock="Top" Padding="20,14">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                    <GradientStop Color="#1A1D24" Offset="0" />
+                    <GradientStop Color="#12141A" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="⚡" FontSize="22" VerticalAlignment="Center" />
+                <TextBlock Text="RomboTool" Classes="h1" VerticalAlignment="Center" />
+                <Border Classes="chip" Padding="8,3">
+                    <TextBlock Text="v3.0" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                </Border>
+                <TextBlock Text="fast search · large-file ready" FontSize="12"
+                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="6,0,0,0" />
             </StackPanel>
         </Border>
 
-        <TabControl Margin="8" Padding="0">
+        <TabControl Margin="12,4,12,12" Padding="0">
 
             <!-- ============================= GREP SEARCH ============================= -->
-            <TabItem Header="Grep Search" FontSize="14">
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="10">
+            <TabItem Header="🔍  Search">
+                <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="0,10,0,0">
 
-                    <!-- Folder -->
-                    <Grid Grid.Row="0" ColumnDefinitions="64,*,Auto,Auto" Margin="0,0,0,6">
-                        <TextBlock Grid.Column="0" Text="Folder" Classes="label" />
-                        <TextBox Grid.Column="1" x:Name="FolderBox" Watermark="/path/to/search" />
-                        <Button Grid.Column="2" Content="Browse" Click="OnBrowseFolder" Margin="6,0,0,0" />
-                        <CheckBox Grid.Column="3" x:Name="RecurseChk" Content="Subfolders" IsChecked="True" Margin="10,0,0,0" />
-                    </Grid>
+                    <!-- ── Query card ── -->
+                    <Border Grid.Row="0" Classes="card" Padding="16" Margin="0,0,0,10">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto">
 
-                    <!-- Files -->
-                    <Grid Grid.Row="1" ColumnDefinitions="64,*" Margin="0,0,0,6">
-                        <TextBlock Grid.Column="0" Text="Files" Classes="label" />
-                        <TextBox Grid.Column="1" x:Name="FilesBox" Text="*" Watermark="*.txt *.log  (space separated)" />
-                    </Grid>
+                            <!-- Source -->
+                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,10">
+                                <TextBlock Grid.Column="0" Text="Search in" Classes="label" Width="70" />
+                                <TextBox Grid.Column="1" x:Name="PathBox"
+                                         Watermark="Pick a file or folder…" TextChanged="OnPathChanged" />
+                                <Button Grid.Column="2" Content="📄 File" Click="OnBrowseFile" Margin="8,0,0,0" />
+                                <Button Grid.Column="3" Content="📁 Folder" Click="OnBrowseFolder" Margin="6,0,0,0" />
+                                <Border Grid.Column="4" Classes="chip" x:Name="TypeChip" Margin="8,0,0,0" IsVisible="False">
+                                    <TextBlock x:Name="TypeChipText" FontSize="12" Foreground="{StaticResource TextBrush}" />
+                                </Border>
+                            </Grid>
 
-                    <!-- Text + options -->
-                    <Grid Grid.Row="2" ColumnDefinitions="64,*,Auto,Auto,Auto" Margin="0,0,0,8">
-                        <TextBlock Grid.Column="0" Text="Text" Classes="label" />
-                        <TextBox Grid.Column="1" x:Name="SearchTextBox" Watermark="text or regex to find…" KeyDown="OnSearchKeyDown" />
-                        <CheckBox Grid.Column="2" x:Name="RegexChk" Content="Regex" Margin="10,0,0,0" />
-                        <CheckBox Grid.Column="3" x:Name="IgnoreCaseChk" Content="Ignore Case" IsChecked="True" Margin="10,0,0,0" />
-                        <CheckBox Grid.Column="4" x:Name="InvertChk" Content="Invert" Margin="10,0,0,0" />
-                    </Grid>
+                            <!-- Folder-only filters -->
+                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" x:Name="FolderFilters" Margin="0,0,0,10">
+                                <TextBlock Grid.Column="0" Text="Files" Classes="label" Width="70" />
+                                <TextBox Grid.Column="1" x:Name="FilesBox" Text="*"
+                                         Watermark="*.txt *.log   (space-separated globs)" />
+                                <CheckBox Grid.Column="2" x:Name="RecurseChk" Content="Subfolders"
+                                          IsChecked="True" Margin="12,0,0,0" />
+                            </Grid>
 
-                    <!-- Actions -->
-                    <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*" Margin="0,0,0,8">
-                        <Button Grid.Column="0" x:Name="SearchBtn" Content="Search" Classes="go" MinWidth="110" Click="OnRunGrep" />
-                        <Button Grid.Column="1" x:Name="StopBtn" Content="Stop" Margin="8,0,0,0" IsEnabled="False" Click="OnStopGrep" />
-                        <ProgressBar Grid.Column="2" x:Name="GrepProgress" Height="6" Margin="14,0,0,0"
-                                     VerticalAlignment="Center" Minimum="0" Maximum="1" Value="0" />
-                    </Grid>
+                            <!-- Text + options -->
+                            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,10">
+                                <TextBlock Grid.Column="0" Text="Find" Classes="label" Width="70" />
+                                <TextBox Grid.Column="1" x:Name="SearchTextBox"
+                                         Watermark="text or regex to find…" KeyDown="OnSearchKeyDown" />
+                                <CheckBox Grid.Column="2" x:Name="RegexChk" Content="Regex" Margin="12,0,0,0" />
+                                <CheckBox Grid.Column="3" x:Name="IgnoreCaseChk" Content="Ignore case"
+                                          IsChecked="True" Margin="12,0,0,0" />
+                                <CheckBox Grid.Column="4" x:Name="InvertChk" Content="Invert" Margin="12,0,0,0" />
+                            </Grid>
 
-                    <!-- Results -->
-                    <Border Grid.Row="4" Background="#161616" CornerRadius="6">
+                            <!-- Actions -->
+                            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,Auto,Auto,*">
+                                <Button Grid.Column="0" x:Name="SearchBtn" Content="Search"
+                                        Classes="go" MinWidth="120" Click="OnRunGrep" />
+                                <Button Grid.Column="1" x:Name="StopBtn" Content="Stop" Classes="danger"
+                                        Margin="8,0,0,0" IsEnabled="False" Click="OnStopGrep" />
+                                <CheckBox Grid.Column="2" x:Name="LimitChk" Content="Stop after"
+                                          IsChecked="True" Margin="18,0,8,0" />
+                                <NumericUpDown Grid.Column="3" x:Name="LimitBox" Value="50000"
+                                               Minimum="1" Maximum="100000000" Increment="10000"
+                                               Width="150" FormatString="N0" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Live progress card ── -->
+                    <Border Grid.Row="1" Classes="card" Padding="16,14" Margin="0,0,0,10">
+                        <Grid RowDefinitions="Auto,Auto,Auto">
+                            <!-- Stat tiles -->
+                            <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" Margin="0,0,0,12">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="PROGRESS" Classes="statlabel" />
+                                    <TextBlock x:Name="StatPercent" Text="0%" Classes="stat"
+                                               Foreground="{StaticResource AccentBrush}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="DATA SCANNED" Classes="statlabel" />
+                                    <TextBlock x:Name="StatData" Text="—" Classes="stat"
+                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="2">
+                                    <TextBlock Text="SPEED" Classes="statlabel" />
+                                    <TextBlock x:Name="StatSpeed" Text="—" Classes="stat"
+                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="3" Spacing="2">
+                                    <TextBlock Text="MATCHES" Classes="statlabel" />
+                                    <TextBlock x:Name="StatMatches" Text="0" Classes="stat"
+                                               Foreground="{StaticResource GreenBrush}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4" Spacing="2">
+                                    <TextBlock Text="ELAPSED" Classes="statlabel" />
+                                    <TextBlock x:Name="StatElapsed" Text="0.0s" Classes="stat"
+                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
+                                </StackPanel>
+                            </Grid>
+
+                            <ProgressBar Grid.Row="1" x:Name="GrepProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,12" />
+
+                            <TextBlock Grid.Row="2" x:Name="StatCurrent"
+                                       Text="Ready — pick a file or folder, type what to find, and hit Search."
+                                       Foreground="{StaticResource MutedBrush}" FontSize="12"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Results ── -->
+                    <Border Grid.Row="2" Classes="inset">
                         <DataGrid x:Name="ResultsGrid"
                                   IsReadOnly="True"
-                                  GridLinesVisibility="Horizontal"
+                                  GridLinesVisibility="None"
                                   HeadersVisibility="Column"
                                   CanUserResizeColumns="True"
                                   CanUserSortColumns="False"
@@ -67,28 +139,30 @@
                                   FontFamily="Cascadia Code,Cascadia Mono,Menlo,Consolas,monospace"
                                   FontSize="12.5">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="240" />
-                                <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" Width="70" />
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="220" />
+                                <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" Width="90" />
                                 <DataGridTextColumn Header="Text" Binding="{Binding Line}" Width="*" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
 
-                    <TextBlock Grid.Row="5" x:Name="GrepStatus" Text="Ready — double-click a result to open it."
-                               Foreground="#888" Margin="2,8,0,0" />
+                    <TextBlock Grid.Row="3" x:Name="GrepStatus"
+                               Text="Double-click a result to open its file."
+                               Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="2,8,0,0" />
                 </Grid>
             </TabItem>
 
             <!-- ============================= COMBO FILTER ============================= -->
-            <TabItem Header="Combo Filter" FontSize="14">
-                <Grid ColumnDefinitions="*,12,*" Margin="10">
+            <TabItem Header="🧹  Combo Filter">
+                <Grid ColumnDefinitions="*,12,*" Margin="0,10,0,0">
 
                     <!-- Left: input -->
-                    <Border Grid.Column="0" Background="#252526" CornerRadius="8" Padding="16">
+                    <Border Grid.Column="0" Classes="card" Padding="18">
                         <Grid RowDefinitions="Auto,*,Auto">
-                            <StackPanel Grid.Row="0" Spacing="4">
-                                <TextBlock Text="Input Files" FontSize="15" FontWeight="SemiBold" Foreground="White" />
-                                <TextBlock Text="Drag &amp; drop files here, or browse" Foreground="#888" Margin="0,0,0,8" />
+                            <StackPanel Grid.Row="0" Spacing="6">
+                                <TextBlock Text="INPUT FILES" Classes="section" />
+                                <TextBlock Text="Drag &amp; drop files here, or browse."
+                                           Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,6" />
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox Grid.Column="0" x:Name="InputBox" IsReadOnly="True" Text="No files…" />
                                     <Button Grid.Column="1" Content="Browse" Classes="accent" Margin="6,0,0,0" Click="OnAddFiles" />
@@ -96,70 +170,79 @@
                                 </Grid>
                             </StackPanel>
 
-                            <Border Grid.Row="1" Background="#161616" CornerRadius="6" Margin="0,12" Padding="10">
-                                <TextBox x:Name="Preview" Background="Transparent" Foreground="#AADDAA"
+                            <Border Grid.Row="1" Classes="inset" Margin="0,14" Padding="12">
+                                <TextBox x:Name="Preview" Background="Transparent" Foreground="#8FE3A6"
                                          FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12"
                                          IsReadOnly="True" BorderThickness="0" AcceptsReturn="True"
                                          TextWrapping="NoWrap" Text="Preview…" />
                             </Border>
 
                             <Grid Grid.Row="2" ColumnDefinitions="*,*">
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Files" Foreground="#888" />
-                                    <TextBlock x:Name="FileCount" Text="0" Classes="stat" Foreground="White" />
+                                <StackPanel Grid.Column="0" Spacing="1">
+                                    <TextBlock Text="FILES" Classes="statlabel" />
+                                    <TextBlock x:Name="FileCount" Text="0" Classes="stat"
+                                               Foreground="{StaticResource TextBrush}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Lines" Foreground="#888" />
-                                    <TextBlock x:Name="LineCount" Text="0" Classes="stat" Foreground="White" />
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Text="TOTAL SIZE" Classes="statlabel" />
+                                    <TextBlock x:Name="SizeCount" Text="0 B" Classes="stat"
+                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
                                 </StackPanel>
                             </Grid>
                         </Grid>
                     </Border>
 
                     <!-- Right: settings + output -->
-                    <Border Grid.Column="2" Background="#252526" CornerRadius="8" Padding="16">
-                        <Grid RowDefinitions="Auto,*,Auto,Auto">
+                    <Border Grid.Column="2" Classes="card" Padding="18">
+                        <Grid RowDefinitions="Auto,*,Auto,Auto,Auto">
                             <StackPanel Grid.Row="0" Spacing="8">
-                                <TextBlock Text="Settings" FontSize="15" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,4" />
-                                <CheckBox x:Name="DedupChk" Content="Remove Duplicates" IsChecked="True" />
-                                <CheckBox x:Name="EmailOnlyChk" Content="Emails Only" />
-                                <CheckBox x:Name="UserOnlyChk" Content="Usernames Only" />
-                                <TextBlock Text="Output" Foreground="#888" Margin="0,6,0,2" />
+                                <TextBlock Text="SETTINGS" Classes="section" />
+                                <CheckBox x:Name="DedupChk" Content="Remove duplicates" IsChecked="True" />
+                                <CheckBox x:Name="EmailOnlyChk" Content="Emails only" />
+                                <CheckBox x:Name="UserOnlyChk" Content="Usernames only" />
+                                <TextBlock Text="OUTPUT" Classes="statlabel" Margin="0,6,0,2" />
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBox Grid.Column="0" x:Name="OutBox" Text="filtered.txt" />
                                     <Button Grid.Column="1" Content="Save As" Margin="6,0,0,0" Click="OnChooseOutput" />
                                 </Grid>
                             </StackPanel>
 
-                            <Border Grid.Row="1" Background="#161616" CornerRadius="6" Margin="0,12" Padding="10">
-                                <TextBox x:Name="Output" Background="Transparent" Foreground="#AAAADD"
+                            <Border Grid.Row="1" Classes="inset" Margin="0,14" Padding="12">
+                                <TextBox x:Name="Output" Background="Transparent" Foreground="#9FB4FF"
                                          FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12"
                                          IsReadOnly="True" BorderThickness="0" AcceptsReturn="True"
                                          TextWrapping="NoWrap" Text="Output preview…" />
                             </Border>
 
                             <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" Margin="0,0,0,10">
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Valid" Foreground="#888" />
-                                    <TextBlock x:Name="ValidStat" Text="0" Classes="stat" Foreground="#28A745" />
+                                <StackPanel Grid.Column="0" Spacing="1">
+                                    <TextBlock Text="VALID" Classes="statlabel" />
+                                    <TextBlock x:Name="ValidStat" Text="0" Classes="stat" Foreground="{StaticResource GreenBrush}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Emails" Foreground="#888" />
-                                    <TextBlock x:Name="EmailStat" Text="0" Classes="stat" Foreground="#007ACC" />
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Text="EMAILS" Classes="statlabel" />
+                                    <TextBlock x:Name="EmailStat" Text="0" Classes="stat" Foreground="{StaticResource AccentBrush}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Users" Foreground="#888" />
-                                    <TextBlock x:Name="UserStat" Text="0" Classes="stat" Foreground="#FFA500" />
+                                <StackPanel Grid.Column="2" Spacing="1">
+                                    <TextBlock Text="USERS" Classes="statlabel" />
+                                    <TextBlock x:Name="UserStat" Text="0" Classes="stat" Foreground="#F5A524" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="3">
-                                    <TextBlock Text="Phones" Foreground="#888" />
-                                    <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" Foreground="#9B59B6" />
+                                <StackPanel Grid.Column="3" Spacing="1">
+                                    <TextBlock Text="PHONES" Classes="statlabel" />
+                                    <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" Foreground="#A78BFA" />
                                 </StackPanel>
                             </Grid>
 
-                            <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
-                                <TextBlock Grid.Column="0" x:Name="ComboStatus" Text="Ready" Foreground="#888" VerticalAlignment="Center" />
-                                <Button Grid.Column="1" x:Name="ComboGoBtn" Content="🚀 Start" Classes="go" MinWidth="140" Click="OnRunCombo" />
+                            <ProgressBar Grid.Row="3" x:Name="ComboProgress" Minimum="0" Maximum="1" Value="0"
+                                         Foreground="{StaticResource GreenBrush}" Margin="0,0,0,10" />
+
+                            <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto">
+                                <TextBlock Grid.Column="0" x:Name="ComboStatus" Text="Ready"
+                                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" FontSize="12" />
+                                <Button Grid.Column="1" x:Name="ComboStopBtn" Content="Stop" Classes="danger"
+                                        IsEnabled="False" Margin="0,0,8,0" Click="OnStopCombo" />
+                                <Button Grid.Column="2" x:Name="ComboGoBtn" Content="🚀 Start"
+                                        Classes="go" MinWidth="130" Click="OnRunCombo" />
                             </Grid>
                         </Grid>
                     </Border>

@@ -3,43 +3,171 @@
              x:Class="RomboTool.App"
              RequestedThemeVariant="Dark">
 
+    <Application.Resources>
+        <!-- Palette -->
+        <Color x:Key="Bg">#0F1115</Color>
+        <Color x:Key="Card">#181B22</Color>
+        <Color x:Key="CardHi">#1F232B</Color>
+        <Color x:Key="Border">#2A2F3A</Color>
+        <Color x:Key="Accent">#3B82F6</Color>
+        <Color x:Key="Green">#22C55E</Color>
+
+        <SolidColorBrush x:Key="BgBrush" Color="#0F1115" />
+        <SolidColorBrush x:Key="CardBrush" Color="#181B22" />
+        <SolidColorBrush x:Key="CardHiBrush" Color="#1F232B" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#2A2F3A" />
+        <SolidColorBrush x:Key="TextBrush" Color="#E6E8EC" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#8A92A0" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6" />
+        <SolidColorBrush x:Key="GreenBrush" Color="#22C55E" />
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
 
-        <!-- Accent / primary action button -->
-        <Style Selector="Button.go">
-            <Setter Property="Background" Value="#28A745" />
-            <Setter Property="Foreground" Value="White" />
+        <!-- ───────────────── Typography ───────────────── -->
+        <Style Selector="TextBlock.h1">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="LetterSpacing" Value="0.6" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.stat">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="TextBlock.statlabel">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="LetterSpacing" Value="0.4" />
+        </Style>
+
+        <!-- ───────────────── Cards ───────────────── -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{StaticResource CardBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+        <Style Selector="Border.inset">
+            <Setter Property="Background" Value="#12141A" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Border.chip">
+            <Setter Property="Background" Value="{StaticResource CardHiBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- ───────────────── Buttons ───────────────── -->
+        <Style Selector="Button">
+            <Setter Property="Background" Value="{StaticResource CardHiBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,8" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2A2F3A" />
+        </Style>
+
+        <Style Selector="Button.go">
+            <Setter Property="Background" Value="{StaticResource GreenBrush}" />
+            <Setter Property="Foreground" Value="#062611" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
         <Style Selector="Button.go:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#2FBF50" />
+            <Setter Property="Background" Value="#34D66E" />
+        </Style>
+        <Style Selector="Button.go:disabled /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2A3A30" />
+            <Setter Property="Foreground" Value="#5A6B60" />
         </Style>
 
         <Style Selector="Button.accent">
-            <Setter Property="Background" Value="#007ACC" />
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderThickness" Value="0" />
         </Style>
         <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1C8FDE" />
+            <Setter Property="Background" Value="#5A9BFF" />
         </Style>
 
-        <!-- Row labels -->
-        <Style Selector="TextBlock.label">
-            <Setter Property="Foreground" Value="#BBBBBB" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+        <Style Selector="Button.danger">
+            <Setter Property="Foreground" Value="#F87171" />
+        </Style>
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3A2226" />
         </Style>
 
-        <Style Selector="TextBlock.stat">
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="Bold" />
+        <!-- ───────────────── Inputs ───────────────── -->
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#12141A" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,7" />
+        </Style>
+        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
         </Style>
 
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="#DDDDDD" />
+            <Setter Property="Foreground" Value="#C7CDD6" />
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="NumericUpDown">
+            <Setter Property="Background" Value="#12141A" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+
+        <!-- ───────────────── Progress ───────────────── -->
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Background" Value="#12141A" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="MinHeight" Value="8" />
+        </Style>
+
+        <!-- ───────────────── Tabs ───────────────── -->
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
+        <!-- ───────────────── DataGrid ───────────────── -->
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="#12141A" />
+        </Style>
+        <Style Selector="DataGridRow:nth-child(2n)">
+            <Setter Property="Background" Value="#12141A" />
         </Style>
     </Application.Styles>
 </Application>

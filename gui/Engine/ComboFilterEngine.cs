@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 
 namespace RomboTool.Engine;
 
@@ -20,8 +23,11 @@ public static class ComboFilterEngine
     public const int TypeUser = 0, TypeEmail = 1, TypePhone = 2;
 
     /// <summary>
-    /// Process all <paramref name="files"/> into <paramref name="results"/>.
-    /// When <paramref name="outPath"/> is non-empty the results are also written to disk.
+    /// Stream every line of <paramref name="files"/> through the parser, writing accepted
+    /// combos straight to <paramref name="outPath"/> so memory stays flat even on multi-GB
+    /// inputs. Only the first <paramref name="previewMax"/> combos are kept in
+    /// <paramref name="preview"/>. <paramref name="onProgress"/> reports (bytesDone, bytesTotal);
+    /// pass a cancellation token to allow a Stop button.
     /// </summary>
     public static ComboStats Process(
         IEnumerable<string> files,
@@ -29,43 +35,79 @@ public static class ComboFilterEngine
         bool dedup,
         bool emailOnly,
         bool userOnly,
-        List<string> results)
+        List<string> preview,
+        int previewMax,
+        Action<long, long>? onProgress,
+        CancellationToken ct)
     {
         var st = new ComboStats();
         var seen = dedup ? new HashSet<string>() : null;
+        var list = files.ToList();
 
-        foreach (var file in files)
+        long bytesTotal = 0;
+        foreach (var f in list)
+            try { bytesTotal += new FileInfo(f).Length; } catch { }
+
+        StreamWriter? writer = null;
+        if (!string.IsNullOrWhiteSpace(outPath))
+            writer = new StreamWriter(outPath!, false) { AutoFlush = false };
+
+        long completedBytes = 0;
+        try
         {
-            foreach (var line in File.ReadLines(file))
+            foreach (var file in list)
             {
-                st.Total++;
-                if (!Parse(line, out var u, out var p, out var t))
+                long fileLen = 0;
+                try { fileLen = new FileInfo(file).Length; } catch { }
+
+                using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read,
+                                               FileShare.ReadWrite, 1 << 20, FileOptions.SequentialScan))
+                using (var reader = new StreamReader(fs, Encoding.UTF8, true, 1 << 20))
                 {
-                    st.Invalid++;
-                    continue;
+                    string? line;
+                    int sinceReport = 0;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        st.Total++;
+                        if (Parse(line, out var u, out var p, out var t))
+                        {
+                            bool skip = (emailOnly && t != TypeEmail) || (userOnly && t != TypeUser);
+                            if (!skip)
+                            {
+                                var combo = u + ":" + p;
+                                bool dup = seen != null && !seen.Add(combo.ToLowerInvariant());
+                                if (dup) st.Duplicates++;
+                                else
+                                {
+                                    writer?.WriteLine(combo);
+                                    if (preview.Count < previewMax) preview.Add(combo);
+                                    st.Valid++;
+                                    if (t == TypeEmail) st.Emails++;
+                                    else if (t == TypePhone) st.Phones++;
+                                    else st.Users++;
+                                }
+                            }
+                        }
+                        else st.Invalid++;
+
+                        if (++sinceReport >= 50_000)
+                        {
+                            sinceReport = 0;
+                            onProgress?.Invoke(completedBytes + fs.Position, bytesTotal);
+                            ct.ThrowIfCancellationRequested();
+                        }
+                    }
                 }
-
-                if (emailOnly && t != TypeEmail) continue;
-                if (userOnly && t != TypeUser) continue;
-
-                var combo = $"{u}:{p}";
-                if (seen != null)
-                {
-                    var key = combo.ToLowerInvariant();
-                    if (!seen.Add(key)) { st.Duplicates++; continue; }
-                }
-
-                results.Add(combo);
-                st.Valid++;
-                if (t == TypeEmail) st.Emails++;
-                else if (t == TypePhone) st.Phones++;
-                else st.Users++;
+                completedBytes += fileLen;
+                onProgress?.Invoke(completedBytes, bytesTotal);
             }
         }
+        finally
+        {
+            writer?.Dispose();
+        }
 
-        if (!string.IsNullOrWhiteSpace(outPath))
-            File.WriteAllLines(outPath, results);
-
+        onProgress?.Invoke(bytesTotal, bytesTotal);
         return st;
     }
 

@@ -2,8 +2,8 @@
 
 A cross-platform desktop toolkit with two features in one app:
 
-1. **Combo Filter** — clean messy combo lists into tidy `user:pass` pairs (pure-C engine).
-2. **Grep Search** — a fast, [BareGrep](https://www.baremetalsoft.com/baregrep/)-style regex search over folders.
+1. **Combo Filter** — clean messy combo lists into tidy `user:pass` pairs (streams to disk, so multi-GB inputs stay memory-flat).
+2. **Search** — a fast, [BareGrep](https://www.baremetalsoft.com/baregrep/)-style search over a single file or a whole folder, built for multi-GB files with live progress.
 
 Built with a pure **C** engine for combo filtering and a cross-platform **Avalonia (.NET 8)** GUI that runs natively on **macOS, Linux, and Windows**.
 
@@ -40,24 +40,33 @@ john_doe:secret456
 user@test.com:pass123
 ```
 
-Features: fast pure-C engine (500K+ lines/sec), O(1) hash dedup, email/user/phone
-detection, URL/spam/path stripping, "emails only" / "usernames only" filters.
+Features: O(1) hash dedup, email/user/phone detection, URL/spam/path stripping,
+"emails only" / "usernames only" filters. The GUI streams accepted combos straight to the
+output file (only a small preview is held in memory), with a live progress bar and a **Stop**
+button, so it processes multi-GB lists without ballooning memory. A standalone pure-C CLI
+(`core/rombofilter.c`, 500K+ lines/sec) is also included.
 
-## 2. Grep Search
+## 2. Search
 
-A friendly regex file searcher modeled on BareGrep:
+A fast file searcher modeled on BareGrep, tuned for **very large files** (multi-GB combo
+dumps included):
 
-- **Folder** to search, with optional **Subfolders** recursion.
-- **Files** filter using space-separated DOS globs (e.g. `*.txt *.log *.cs`).
-- **Text** as a literal or **Regex**, with **Ignore Case** and **Invert** options.
-- Parallel search across CPU cores, binary files auto-skipped (NUL-byte heuristic),
-  256 MB per-file cap.
+- Search a **single file** *or* a **folder** (auto-detected; a chip shows the type and file
+  size). Folder mode adds **Subfolders** recursion and a space-separated glob **Files** filter
+  (e.g. `*.txt *.log *.cs`).
+- **Find** as a literal or **Regex**, with **Ignore Case** and **Invert** options.
+- **Live progress** while it runs: a byte-accurate progress bar plus tiles for
+  data scanned / total, throughput (MB/s), match count, and elapsed time — you can watch a
+  19 GB file stream through. **Stop after** *N* matches keeps huge searches snappy, and a
+  **Stop** button cancels instantly.
+- Handles the ugly stuff: files up to 8 GB in folder mode (**no cap on a hand-picked file**),
+  embedded NUL bytes, CRLF, and pathologically long lines — all read through a bounded byte
+  buffer so memory stays flat.
+- Literal searches scan raw bytes and only decode lines that actually match, so common terms
+  fly (~300+ MB/s). Multi-file searches fan out across CPU cores; a single huge file streams
+  sequentially for correct line numbers.
 - Results grid (File · Line · Text). **Double-click a result to open the file** in your
-  default editor. Press **Enter** in the Text box to search.
-
-The search engine is a dependency-free C# port of the
-[GrepRipper](https://github.com/rwasef1830/grepripper) engine (itself a BareGrep clone),
-with the Windows-only `libmagic` dependency removed.
+  default editor. Press **Enter** in the Find box to search.
 
 ---
 
