@@ -8,26 +8,38 @@
         WindowStartupLocation="CenterScreen">
 
     <DockPanel>
-        <!-- Header -->
-        <Border DockPanel.Dock="Top" Padding="20,14">
+        <!-- App bar -->
+        <Border DockPanel.Dock="Top" Padding="18,13" BorderThickness="0,0,0,1"
+                BorderBrush="#20242D">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
                     <GradientStop Color="#1A1D24" Offset="0" />
-                    <GradientStop Color="#12141A" Offset="1" />
+                    <GradientStop Color="#121419" Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
-            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <TextBlock Text="⚡" FontSize="22" VerticalAlignment="Center" />
-                <TextBlock Text="RomboTool" Classes="h1" VerticalAlignment="Center" />
-                <Border Classes="chip" Padding="8,3">
-                    <TextBlock Text="v3.0" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <!-- Logo badge -->
+                    <Border Width="40" Height="40" CornerRadius="11"
+                            Background="{StaticResource LogoGradient}"
+                            BoxShadow="0 4 14 -2 #663B82F6">
+                        <TextBlock Text="⚡" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center" Spacing="1">
+                        <TextBlock Text="RomboTool" Classes="h1" />
+                        <TextBlock Text="fast search · large-file ready" FontSize="11.5"
+                                   Foreground="{StaticResource FaintBrush}" />
+                    </StackPanel>
+                </StackPanel>
+                <Border Grid.Column="2" Classes="chip" Padding="10,4" VerticalAlignment="Center">
+                    <TextBlock Text="v3.0" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" />
                 </Border>
-                <TextBlock Text="fast search · large-file ready" FontSize="12"
-                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="6,0,0,0" />
-            </StackPanel>
+            </Grid>
         </Border>
+        <!-- Accent underline -->
+        <Border DockPanel.Dock="Top" Height="2" Background="{StaticResource AccentGradient}" Opacity="0.85" />
 
-        <TabControl Margin="12,4,12,12" Padding="0">
+        <TabControl Margin="12,8,12,12" Padding="0">
 
             <!-- ============================= GREP SEARCH ============================= -->
             <TabItem Header="🔍  Search">
@@ -88,32 +100,42 @@
                     <Border Grid.Row="1" Classes="card" Padding="16,14" Margin="0,0,0,10">
                         <Grid RowDefinitions="Auto,Auto,Auto">
                             <!-- Stat tiles -->
-                            <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" Margin="0,0,0,12">
-                                <StackPanel Grid.Column="0" Spacing="2">
-                                    <TextBlock Text="PROGRESS" Classes="statlabel" />
-                                    <TextBlock x:Name="StatPercent" Text="0%" Classes="stat"
-                                               Foreground="{StaticResource AccentBrush}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock Text="DATA SCANNED" Classes="statlabel" />
-                                    <TextBlock x:Name="StatData" Text="—" Classes="stat"
-                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Spacing="2">
-                                    <TextBlock Text="SPEED" Classes="statlabel" />
-                                    <TextBlock x:Name="StatSpeed" Text="—" Classes="stat"
-                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="3" Spacing="2">
-                                    <TextBlock Text="MATCHES" Classes="statlabel" />
-                                    <TextBlock x:Name="StatMatches" Text="0" Classes="stat"
-                                               Foreground="{StaticResource GreenBrush}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="4" Spacing="2">
-                                    <TextBlock Text="ELAPSED" Classes="statlabel" />
-                                    <TextBlock x:Name="StatElapsed" Text="0.0s" Classes="stat"
-                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
-                                </StackPanel>
+                            <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" Margin="0,0,0,14">
+                                <Border Grid.Column="0" Classes="tile" Margin="0,0,5,0">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="PROGRESS" Classes="statlabel" />
+                                        <TextBlock x:Name="StatPercent" Text="0%" Classes="stat"
+                                                   Foreground="{StaticResource AccentBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Classes="tile" Margin="5,0,5,0">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="DATA SCANNED" Classes="statlabel" />
+                                        <TextBlock x:Name="StatData" Text="—" Classes="stat"
+                                                   Foreground="{StaticResource TextBrush}" FontSize="16" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Classes="tile" Margin="5,0,5,0">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="SPEED" Classes="statlabel" />
+                                        <TextBlock x:Name="StatSpeed" Text="—" Classes="stat"
+                                                   Foreground="{StaticResource TextBrush}" FontSize="16" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="3" Classes="tile" Margin="5,0,5,0">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="MATCHES" Classes="statlabel" />
+                                        <TextBlock x:Name="StatMatches" Text="0" Classes="stat"
+                                                   Foreground="{StaticResource GreenBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="4" Classes="tile" Margin="5,0,0,0">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="ELAPSED" Classes="statlabel" />
+                                        <TextBlock x:Name="StatElapsed" Text="0.0s" Classes="stat"
+                                                   Foreground="{StaticResource TextBrush}" FontSize="16" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
 
                             <ProgressBar Grid.Row="1" x:Name="GrepProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,12" />
@@ -178,16 +200,20 @@
                             </Border>
 
                             <Grid Grid.Row="2" ColumnDefinitions="*,*">
-                                <StackPanel Grid.Column="0" Spacing="1">
-                                    <TextBlock Text="FILES" Classes="statlabel" />
-                                    <TextBlock x:Name="FileCount" Text="0" Classes="stat"
-                                               Foreground="{StaticResource TextBrush}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="1">
-                                    <TextBlock Text="TOTAL SIZE" Classes="statlabel" />
-                                    <TextBlock x:Name="SizeCount" Text="0 B" Classes="stat"
-                                               Foreground="{StaticResource TextBrush}" FontSize="17" />
-                                </StackPanel>
+                                <Border Grid.Column="0" Classes="tile" Margin="0,0,5,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="FILES" Classes="statlabel" />
+                                        <TextBlock x:Name="FileCount" Text="0" Classes="stat" FontSize="18"
+                                                   Foreground="{StaticResource TextBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Classes="tile" Margin="5,0,0,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="TOTAL SIZE" Classes="statlabel" />
+                                        <TextBlock x:Name="SizeCount" Text="0 B" Classes="stat" FontSize="18"
+                                                   Foreground="{StaticResource TextBrush}" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
                         </Grid>
                     </Border>
@@ -214,23 +240,31 @@
                                          TextWrapping="NoWrap" Text="Output preview…" />
                             </Border>
 
-                            <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" Margin="0,0,0,10">
-                                <StackPanel Grid.Column="0" Spacing="1">
-                                    <TextBlock Text="VALID" Classes="statlabel" />
-                                    <TextBlock x:Name="ValidStat" Text="0" Classes="stat" Foreground="{StaticResource GreenBrush}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="1">
-                                    <TextBlock Text="EMAILS" Classes="statlabel" />
-                                    <TextBlock x:Name="EmailStat" Text="0" Classes="stat" Foreground="{StaticResource AccentBrush}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Spacing="1">
-                                    <TextBlock Text="USERS" Classes="statlabel" />
-                                    <TextBlock x:Name="UserStat" Text="0" Classes="stat" Foreground="#F5A524" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="3" Spacing="1">
-                                    <TextBlock Text="PHONES" Classes="statlabel" />
-                                    <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" Foreground="#A78BFA" />
-                                </StackPanel>
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" Margin="0,0,0,12">
+                                <Border Grid.Column="0" Classes="tile" Margin="0,0,5,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="VALID" Classes="statlabel" />
+                                        <TextBlock x:Name="ValidStat" Text="0" Classes="stat" FontSize="18" Foreground="{StaticResource GreenBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Classes="tile" Margin="5,0,5,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="EMAILS" Classes="statlabel" />
+                                        <TextBlock x:Name="EmailStat" Text="0" Classes="stat" FontSize="18" Foreground="{StaticResource AccentBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Classes="tile" Margin="5,0,5,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="USERS" Classes="statlabel" />
+                                        <TextBlock x:Name="UserStat" Text="0" Classes="stat" FontSize="18" Foreground="#F5A524" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="3" Classes="tile" Margin="5,0,0,0">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="PHONES" Classes="statlabel" />
+                                        <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" FontSize="18" Foreground="#A78BFA" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
 
                             <ProgressBar Grid.Row="3" x:Name="ComboProgress" Minimum="0" Maximum="1" Value="0"
