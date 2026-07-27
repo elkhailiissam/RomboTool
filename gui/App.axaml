@@ -4,43 +4,71 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <!-- Palette -->
-        <SolidColorBrush x:Key="BgBrush" Color="#0E1014" />
-        <SolidColorBrush x:Key="CardBrush" Color="#181B22" />
-        <SolidColorBrush x:Key="CardHiBrush" Color="#20242D" />
-        <SolidColorBrush x:Key="TileBrush" Color="#161A21" />
-        <SolidColorBrush x:Key="BorderBrush" Color="#2A2F3A" />
-        <SolidColorBrush x:Key="BorderSoftBrush" Color="#22262F" />
-        <SolidColorBrush x:Key="TextBrush" Color="#E7E9ED" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#8A92A0" />
-        <SolidColorBrush x:Key="FaintBrush" Color="#5B626E" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6" />
-        <SolidColorBrush x:Key="GreenBrush" Color="#22C55E" />
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
 
-        <!-- Elevated surface: subtle top-lit gradient -->
-        <LinearGradientBrush x:Key="CardGradient" StartPoint="0%,0%" EndPoint="0%,100%">
-            <GradientStop Color="#1C2029" Offset="0" />
-            <GradientStop Color="#171A21" Offset="1" />
-        </LinearGradientBrush>
+                <!-- ───────── Dark ───────── -->
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="Bg" Color="#0D0F13" />
+                    <SolidColorBrush x:Key="Surface" Color="#171A21" />
+                    <SolidColorBrush x:Key="SurfaceAlt" Color="#12151B" />
+                    <SolidColorBrush x:Key="Elevated" Color="#21252E" />
+                    <SolidColorBrush x:Key="Border" Color="#262B36" />
+                    <SolidColorBrush x:Key="Line" Color="#1E222B" />
+                    <SolidColorBrush x:Key="Text" Color="#E8EAEE" />
+                    <SolidColorBrush x:Key="TextMuted" Color="#98A0AD" />
+                    <SolidColorBrush x:Key="TextFaint" Color="#5C6370" />
+                    <SolidColorBrush x:Key="Accent" Color="#3B82F6" />
+                    <SolidColorBrush x:Key="AccentSoft" Color="#1B2740" />
+                    <SolidColorBrush x:Key="OnAccent" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="Success" Color="#22C55E" />
+                    <SolidColorBrush x:Key="Warning" Color="#F5A524" />
+                    <SolidColorBrush x:Key="Error" Color="#F87171" />
+                    <SolidColorBrush x:Key="Info" Color="#38BDF8" />
+                    <SolidColorBrush x:Key="Selection" Color="#20304F" />
+                    <SolidColorBrush x:Key="Hover" Color="#1C212A" />
+                    <SolidColorBrush x:Key="Field" Color="#0F1217" />
+                </ResourceDictionary>
 
-        <!-- Primary action gradient -->
-        <LinearGradientBrush x:Key="GreenGradient" StartPoint="0%,0%" EndPoint="0%,100%">
-            <GradientStop Color="#2EDC74" Offset="0" />
-            <GradientStop Color="#1DAE5A" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0%,0%" EndPoint="100%,0%">
-            <GradientStop Color="#3B82F6" Offset="0" />
-            <GradientStop Color="#22C55E" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="ProgressGradient" StartPoint="0%,0%" EndPoint="100%,0%">
-            <GradientStop Color="#3B82F6" Offset="0" />
-            <GradientStop Color="#38BDF8" Offset="0.5" />
-            <GradientStop Color="#22C55E" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="LogoGradient" StartPoint="0%,0%" EndPoint="100%,100%">
-            <GradientStop Color="#3B82F6" Offset="0" />
-            <GradientStop Color="#22C55E" Offset="1" />
-        </LinearGradientBrush>
+                <!-- ───────── Light ───────── -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="Bg" Color="#F3F4F7" />
+                    <SolidColorBrush x:Key="Surface" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="SurfaceAlt" Color="#EEF0F4" />
+                    <SolidColorBrush x:Key="Elevated" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="Border" Color="#E1E4EA" />
+                    <SolidColorBrush x:Key="Line" Color="#E7E9EE" />
+                    <SolidColorBrush x:Key="Text" Color="#171A20" />
+                    <SolidColorBrush x:Key="TextMuted" Color="#5B626D" />
+                    <SolidColorBrush x:Key="TextFaint" Color="#9AA0AA" />
+                    <SolidColorBrush x:Key="Accent" Color="#2563EB" />
+                    <SolidColorBrush x:Key="AccentSoft" Color="#DCE7FF" />
+                    <SolidColorBrush x:Key="OnAccent" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="Success" Color="#15A34A" />
+                    <SolidColorBrush x:Key="Warning" Color="#C2740B" />
+                    <SolidColorBrush x:Key="Error" Color="#DC2626" />
+                    <SolidColorBrush x:Key="Info" Color="#0284C7" />
+                    <SolidColorBrush x:Key="Selection" Color="#D9E6FF" />
+                    <SolidColorBrush x:Key="Hover" Color="#EDF0F5" />
+                    <SolidColorBrush x:Key="Field" Color="#F6F7F9" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <!-- Theme-invariant gradients -->
+            <LinearGradientBrush x:Key="LogoGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#3B82F6" Offset="0" />
+                <GradientStop Color="#22C55E" Offset="1" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="AccentGradient" StartPoint="0%,0%" EndPoint="100%,0%">
+                <GradientStop Color="#3B82F6" Offset="0" />
+                <GradientStop Color="#22C55E" Offset="1" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="ProgressGradient" StartPoint="0%,0%" EndPoint="100%,0%">
+                <GradientStop Color="#3B82F6" Offset="0" />
+                <GradientStop Color="#38BDF8" Offset="0.5" />
+                <GradientStop Color="#22C55E" Offset="1" />
+            </LinearGradientBrush>
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>
@@ -48,193 +76,265 @@
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
 
         <!-- ───────────────── Typography ───────────────── -->
-        <Style Selector="TextBlock.h1">
-            <Setter Property="FontSize" Value="19" />
+        <Style Selector="TextBlock.title">
+            <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        </Style>
+        <Style Selector="TextBlock.subtitle">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
         </Style>
         <Style Selector="TextBlock.section">
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-            <Setter Property="LetterSpacing" Value="1.2" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+            <Setter Property="LetterSpacing" Value="1.1" />
         </Style>
         <Style Selector="TextBlock.label">
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style Selector="TextBlock.stat">
-            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontSize" Value="18" />
             <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
         </Style>
         <Style Selector="TextBlock.statlabel">
-            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontSize" Value="10" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource FaintBrush}" />
-            <Setter Property="LetterSpacing" Value="0.8" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
+            <Setter Property="LetterSpacing" Value="0.6" />
+        </Style>
+        <Style Selector="TextBlock.mono">
+            <Setter Property="FontFamily" Value="Cascadia Code,Menlo,Consolas,monospace" />
         </Style>
 
-        <!-- ───────────────── Cards & surfaces ───────────────── -->
+        <!-- ───────────────── Surfaces ───────────────── -->
         <Style Selector="Border.card">
-            <Setter Property="Background" Value="{StaticResource CardGradient}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="BoxShadow" Value="0 10 28 -6 #66000000, 0 2 6 -2 #40000000" />
+            <Setter Property="Background" Value="{DynamicResource Surface}" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="BoxShadow" Value="0 12 32 -8 #55000000, 0 2 6 -3 #40000000" />
         </Style>
         <Style Selector="Border.tile">
-            <Setter Property="Background" Value="{StaticResource TileBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="12,9" />
         </Style>
         <Style Selector="Border.inset">
-            <Setter Property="Background" Value="#101318" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="BoxShadow" Value="inset 0 1 3 0 #40000000" />
+            <Setter Property="CornerRadius" Value="12" />
         </Style>
         <Style Selector="Border.chip">
-            <Setter Property="Background" Value="{StaticResource CardHiBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="20" />
-            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,6" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <!-- ───────────────── Buttons ───────────────── -->
+        <!-- ───────────────── Buttons ─────────────────
+             Fluent's button template paints its ContentPresenter from internal theme
+             resources, so we set the visible background on the ContentPresenter itself
+             (per state) to keep colours deterministic across light/dark. -->
         <Style Selector="Button">
-            <Setter Property="Background" Value="{StaticResource CardHiBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="9" />
             <Setter Property="Padding" Value="14,8" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Transitions">
-                <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.14" />
-                </Transitions>
-            </Setter>
         </Style>
         <Style Selector="Button /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Elevated}" />
             <Setter Property="Transitions">
                 <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.14" />
+                    <BrushTransition Property="Background" Duration="0:0:0.13" />
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="Button:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#2B313D" />
-            <Setter Property="BorderBrush" Value="#39414F" />
+            <Setter Property="Background" Value="{DynamicResource Hover}" />
         </Style>
         <Style Selector="Button:pressed /template/ ContentPresenter">
-            <Setter Property="Background" Value="#20252F" />
+            <Setter Property="Background" Value="{DynamicResource Selection}" />
+        </Style>
+        <Style Selector="Button:disabled /template/ ContentPresenter">
+            <Setter Property="Opacity" Value="0.45" />
         </Style>
 
+        <!-- Primary (accent) -->
+        <Style Selector="Button.primary">
+            <Setter Property="Foreground" Value="{DynamicResource OnAccent}" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="Button.primary /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#5A9BFF" />
+        </Style>
+
+        <!-- Go (success) -->
         <Style Selector="Button.go">
-            <Setter Property="Background" Value="{StaticResource GreenGradient}" />
-            <Setter Property="Foreground" Value="#05230F" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#052611" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="FontSize" Value="14" />
         </Style>
         <Style Selector="Button.go /template/ ContentPresenter">
-            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Background" Value="{DynamicResource Success}" />
         </Style>
         <Style Selector="Button.go:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#34E27C" />
         </Style>
-        <Style Selector="Button.go:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="#243528" />
-            <Setter Property="Foreground" Value="#5A6B60" />
+
+        <!-- Ghost / toolbar -->
+        <Style Selector="Button.ghost">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+        <Style Selector="Button.ghost /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Hover}" />
         </Style>
 
-        <Style Selector="Button.accent">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
+        <!-- Icon button (square) -->
+        <Style Selector="Button.icon">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="CornerRadius" Value="8" />
         </Style>
-        <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#5A9BFF" />
+        <Style Selector="Button.icon /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.icon:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Hover}" />
         </Style>
 
         <Style Selector="Button.danger">
-            <Setter Property="Foreground" Value="#F87171" />
-        </Style>
-        <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#3A2226" />
-            <Setter Property="BorderBrush" Value="#5B2E33" />
+            <Setter Property="Foreground" Value="{DynamicResource Error}" />
         </Style>
 
         <!-- ───────────────── Inputs ───────────────── -->
         <Style Selector="TextBox">
-            <Setter Property="Background" Value="#101318" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Background" Value="{DynamicResource Field}" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="10,7" />
         </Style>
         <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
-            <Setter Property="BorderBrush" Value="#39414F" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TextFaint}" />
         </Style>
         <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+
+        <!-- Spotlight search field wrapper -->
+        <Style Selector="Border.searchfield">
+            <Setter Property="Background" Value="{DynamicResource Field}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="MinHeight" Value="48" />
+        </Style>
+        <Style Selector="Border.searchfield:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextFaint}" />
+        </Style>
+        <Style Selector="TextBox.plain">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="TextBox.plain:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="Transparent" />
         </Style>
 
         <Style Selector="CheckBox">
-            <Setter Property="Foreground" Value="#C7CDD6" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
         <Style Selector="NumericUpDown">
-            <Setter Property="Background" Value="#101318" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Background" Value="{DynamicResource Field}" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+
+        <!-- Expander (Advanced) -->
+        <Style Selector="Expander">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
         <!-- ───────────────── Progress ───────────────── -->
         <Style Selector="ProgressBar">
             <Setter Property="Foreground" Value="{StaticResource ProgressGradient}" />
-            <Setter Property="Background" Value="#0C0F14" />
-            <Setter Property="CornerRadius" Value="5" />
-            <Setter Property="MinHeight" Value="9" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="MinHeight" Value="10" />
         </Style>
 
         <!-- ───────────────── Tabs ───────────────── -->
         <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontSize" Value="13.5" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-            <Setter Property="Padding" Value="18,9" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+            <Setter Property="Padding" Value="16,8" />
             <Setter Property="MinHeight" Value="0" />
         </Style>
         <Style Selector="TabItem:selected">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-        </Style>
-        <Style Selector="TabItem:pointerover /template/ ContentPresenter">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
         </Style>
 
         <!-- ───────────────── DataGrid ───────────────── -->
         <Style Selector="DataGrid">
-            <Setter Property="RowHeight" Value="30" />
+            <Setter Property="RowHeight" Value="32" />
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
         </Style>
         <Style Selector="DataGridColumnHeader">
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
             <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="FontSize" Value="11.5" />
-            <Setter Property="Background" Value="#0C0F14" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
             <Setter Property="Padding" Value="12,8" />
-            <Setter Property="SeparatorBrush" Value="{StaticResource BorderSoftBrush}" />
+            <Setter Property="SeparatorBrush" Value="{DynamicResource Line}" />
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="DataGridRow:nth-child(2n)">
-            <Setter Property="Background" Value="#12151B" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+        </Style>
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource Hover}" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource Selection}" />
+            <Setter Property="Opacity" Value="1" />
         </Style>
         <Style Selector="DataGridCell">
             <Setter Property="Padding" Value="8,0" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+        <Style Selector="DataGridCell:focus /template/ Grid#FocusVisual">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+
+        <!-- Context menu -->
+        <Style Selector="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
         </Style>
     </Application.Styles>
 </Application>

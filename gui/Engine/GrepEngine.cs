@@ -22,18 +22,32 @@ public sealed class GrepOptions
     public bool IgnoreCase = true;
     public bool Recurse = true;
     public bool InvertMatch;
+    public bool WholeWord;
+    public bool Multiline;
     /// <summary>Stop after this many matches (0 = unlimited). Keeps huge-file searches snappy.</summary>
     public long MaxMatches;
+
+    /// <summary>True when the raw-byte fast path applies (plain literal, no word boundary).</summary>
+    public bool UsesByteMatcher => !Regex && !InvertMatch && !WholeWord;
 }
 
-/// <summary>A single matching line.</summary>
+/// <summary>A single matching line, shaped for the results grid.</summary>
 public readonly record struct GrepMatch(
     string FullPath,
     string FileName,
     long LineNumber,
-    string Line,
-    int MatchStart,
-    int MatchLength);
+    string Line,           // full decoded line (capped) — for "copy line" / send-to-search
+    string Preview,        // snippet centered on the first match ("…context match context…")
+    int MatchStart,        // offset of the match within Preview (for highlighting)
+    int MatchLength,
+    int LineLength,        // length of the full original line
+    int Occurrences)       // number of matches on the line
+{
+    /// <summary>The matched substring, as shown highlighted in the preview.</summary>
+    public string MatchText =>
+        MatchLength > 0 && MatchStart >= 0 && MatchStart + MatchLength <= Preview.Length
+            ? Preview.Substring(MatchStart, MatchLength) : "";
+}
 
 /// <summary>Live progress snapshot pushed from the search worker(s).</summary>
 /// <param name="BytesDone">Progress toward <paramref name="BytesTotal"/> (drives the bar; reaches total on completion).</param>
@@ -44,15 +58,17 @@ public readonly record struct GrepProgress(
     long BytesDone,
     long BytesTotal,
     long BytesScanned,
+    long LinesScanned,
     int FilesWithMatches,
     long MatchCount,
-    string CurrentFile);
+    string CurrentFile,
+    long CurrentLine);
 
 /// <summary>
 /// Cross-platform file searcher tuned for very large, messy files (multi-GB combo dumps
 /// with embedded NUL bytes and CRLF lines). Reads through a raw byte buffer — never
-/// materialising a whole file or an unbounded line in memory — and, for literal searches,
-/// scans the raw bytes so non-matching lines are never decoded.
+/// materialising a whole file or an unbounded line in memory — and, for plain literal
+/// searches, scans the raw bytes so non-matching lines are never decoded.
 /// </summary>
 public static class GrepEngine
 {
@@ -61,7 +77,8 @@ public static class GrepEngine
 
     const int ReadBufferSize = 1 << 20;          // 1 MiB read chunks
     const int MaxLineBytes = 64 * 1024;          // longest line we keep; overflow is truncated
-    const int MaxLineDisplayLength = 2000;       // chars shown per row
+    const int PreviewContextBefore = 48;         // chars kept before the match in a snippet
+    const int PreviewContextAfter = 120;         // chars kept after the match in a snippet
     const int BinarySniffBytes = 8000;
     const long ProgressByteStep = 8L * 1024 * 1024; // push progress at least every 8 MiB
 
@@ -69,7 +86,10 @@ public static class GrepEngine
     {
         var opts = RegexOptions.Compiled | RegexOptions.CultureInvariant;
         if (o.IgnoreCase) opts |= RegexOptions.IgnoreCase;
+        if (o.Multiline) opts |= RegexOptions.Multiline;
+
         var pattern = o.Regex ? o.Text : Regex.Escape(o.Text);
+        if (o.WholeWord) pattern = $@"\b(?:{pattern})\b";
         return new Regex(pattern, opts);
     }
 
@@ -119,9 +139,10 @@ public static class GrepEngine
     /// <summary>Shared, thread-safe search state.</summary>
     sealed class State
     {
-        public long BytesTotal, BytesDone, BytesScanned, MatchCount, LastReportedBytes;
+        public long BytesTotal, BytesDone, BytesScanned, LinesScanned, MatchCount, LastReportedBytes;
         public int FilesTotal, FilesDone, FilesWithMatches;
         public volatile string CurrentFile = "";
+        public long CurrentLine;
         public readonly Stopwatch Clock = Stopwatch.StartNew();
         long _lastReportMs;
 
@@ -130,10 +151,9 @@ public static class GrepEngine
             if (force) return true;
             long bytes = Interlocked.Read(ref BytesDone);
             if (bytes - Interlocked.Read(ref LastReportedBytes) < ProgressByteStep) return false;
-            // Debounce so we never flood the UI thread faster than ~30 Hz.
             long now = Clock.ElapsedMilliseconds;
             long last = Interlocked.Read(ref _lastReportMs);
-            if (now - last < 33) return false;
+            if (now - last < 33) return false;   // debounce to ~30 Hz
             if (Interlocked.CompareExchange(ref _lastReportMs, now, last) != last) return false;
             Interlocked.Exchange(ref LastReportedBytes, bytes);
             return true;
@@ -142,15 +162,17 @@ public static class GrepEngine
         public GrepProgress Snapshot() => new(
             Volatile.Read(ref FilesDone), FilesTotal,
             Interlocked.Read(ref BytesDone), BytesTotal, Interlocked.Read(ref BytesScanned),
+            Interlocked.Read(ref LinesScanned),
             Volatile.Read(ref FilesWithMatches), Interlocked.Read(ref MatchCount),
-            CurrentFile);
+            CurrentFile, Volatile.Read(ref CurrentLine));
     }
 
     public static async Task SearchAsync(
         GrepOptions o,
         Action<List<GrepMatch>> onFileMatches,
         Action<GrepProgress> onProgress,
-        CancellationToken ct)
+        CancellationToken ct,
+        ManualResetEventSlim? pauseGate = null)
     {
         var files = EnumerateFiles(o);
         var state = new State { FilesTotal = files.Count };
@@ -161,7 +183,7 @@ public static class GrepEngine
 
         onProgress(state.Snapshot());
 
-        var matcher = o.Regex || o.InvertMatch ? null : new ByteMatcher(o.Text, o.IgnoreCase);
+        var matcher = o.UsesByteMatcher ? new ByteMatcher(o.Text, o.IgnoreCase) : null;
         var regex = matcher == null ? BuildRegex(o) : null;
 
         void Report(bool force)
@@ -169,11 +191,9 @@ public static class GrepEngine
             if (state.ShouldReport(force)) onProgress(state.Snapshot());
         }
 
-        // One big file: a single sequential pass (correct line numbers, smooth byte progress).
-        // Many files: fan out across cores.
         if (files.Count == 1)
         {
-            await Task.Run(() => SearchOneFile(files[0], o, matcher, regex, onFileMatches, state, Report, ct));
+            await Task.Run(() => SearchOneFile(files[0], o, matcher, regex, onFileMatches, state, Report, ct, pauseGate));
         }
         else
         {
@@ -186,7 +206,7 @@ public static class GrepEngine
             {
                 await Parallel.ForEachAsync(files, parOpts, (file, token) =>
                 {
-                    SearchOneFile(file, o, matcher, regex, onFileMatches, state, Report, token);
+                    SearchOneFile(file, o, matcher, regex, onFileMatches, state, Report, token, pauseGate);
                     return ValueTask.CompletedTask;
                 });
             }
@@ -198,7 +218,8 @@ public static class GrepEngine
 
     static void SearchOneFile(
         string file, GrepOptions o, ByteMatcher? matcher, Regex? regex,
-        Action<List<GrepMatch>> onFileMatches, State state, Action<bool> report, CancellationToken ct)
+        Action<List<GrepMatch>> onFileMatches, State state, Action<bool> report,
+        CancellationToken ct, ManualResetEventSlim? pauseGate)
     {
         state.CurrentFile = System.IO.Path.GetFileName(file);
         List<GrepMatch>? matches = null;
@@ -229,12 +250,14 @@ public static class GrepEngine
             void Flush()
             {
                 lineNumber++;
+                Interlocked.Increment(ref state.LinesScanned);
                 int len = lineLen;
                 if (len > 0 && line[len - 1] == (byte)'\r') len--;
                 var m = MatchLine(file, line, len, lineNumber, o, matcher, regex);
                 if (m.HasValue)
                 {
                     fileHadMatch = true;
+                    Volatile.Write(ref state.CurrentLine, lineNumber);
                     (matches ??= new()).Add(m.Value);
                     long total = Interlocked.Increment(ref state.MatchCount);
                     if (matches.Count >= 256) { onFileMatches(matches); matches = null; }
@@ -246,6 +269,7 @@ public static class GrepEngine
 
             while ((read = stream.Read(buf, 0, buf.Length)) > 0)
             {
+                pauseGate?.Wait(ct);
                 for (int i = 0; i < read; i++)
                 {
                     byte b = buf[i];
@@ -271,7 +295,7 @@ public static class GrepEngine
         finally
         {
             if (matches is { Count: > 0 }) onFileMatches(matches);
-            // Account for any bytes we didn't stream (binary/oversize skip, early stop, errors)
+            // Account for bytes we didn't stream (binary/oversize skip, early stop, errors)
             // so the aggregate progress bar always reaches its total.
             if (length > counted) Interlocked.Add(ref state.BytesDone, length - counted);
             if (fileHadMatch) Interlocked.Increment(ref state.FilesWithMatches);
@@ -288,35 +312,71 @@ public static class GrepEngine
     {
         if (matcher != null)
         {
-            int idx = matcher.IndexIn(line, len);
-            if (idx < 0) return null;
+            // Fast path: detect on raw bytes, only decode + measure when there's a hit.
+            if (matcher.IndexIn(line, len) < 0) return null;
             var text = Decode(line, len);
-            return MakeMatch(file, lineNumber, text, idx, matcher.NeedleLength);
+            int idx = text.IndexOf(o.Text, o.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+            if (idx < 0) idx = 0;
+            int occ = CountLiteral(text, o.Text, o.IgnoreCase);
+            return MakeMatch(file, lineNumber, text, idx, o.Text.Length, Math.Max(1, occ));
         }
 
-        // Regex / invert paths need the decoded string.
         var s = Decode(line, len);
         if (o.InvertMatch)
-            return regex!.IsMatch(s) ? null : MakeMatch(file, lineNumber, s, 0, 0);
+            return regex!.IsMatch(s) ? null : MakeMatch(file, lineNumber, s, 0, 0, 0);
 
         var m = regex!.Match(s);
-        return m.Success ? MakeMatch(file, lineNumber, s, m.Index, m.Length) : (GrepMatch?)null;
+        if (!m.Success) return null;
+        int count = regex.Matches(s).Count;
+        return MakeMatch(file, lineNumber, s, m.Index, m.Length, count);
+    }
+
+    static int CountLiteral(string haystack, string needle, bool ignoreCase)
+    {
+        if (needle.Length == 0) return 0;
+        var cmp = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        int count = 0, i = 0;
+        while ((i = haystack.IndexOf(needle, i, cmp)) >= 0) { count++; i += needle.Length; }
+        return count;
     }
 
     static string Decode(byte[] bytes, int len)
     {
         // UTF-8 with the default replacement fallback: never throws, and invalid bytes from
         // binary noise become U+FFFD rather than derailing the search.
-        int take = Math.Min(len, MaxLineDisplayLength * 4);
-        return Encoding.UTF8.GetString(bytes, 0, take);
+        return Encoding.UTF8.GetString(bytes, 0, len);
     }
 
-    static GrepMatch MakeMatch(string file, long lineNumber, string line, int start, int length)
+    /// <summary>
+    /// Build a match-centered snippet so the grid shows "…context <b>match</b> context…"
+    /// instead of a giant line. Returns the snippet plus the match offset within it.
+    /// </summary>
+    const int MaxStoredLine = 4096;   // cap the full line we keep for "copy line"
+
+    static GrepMatch MakeMatch(string file, long lineNumber, string line, int start, int length, int occurrences)
     {
-        var display = line.Length > MaxLineDisplayLength ? line[..MaxLineDisplayLength] : line;
-        if (start > display.Length) { start = 0; length = 0; }
-        else if (start + length > display.Length) length = display.Length - start;
-        return new GrepMatch(file, System.IO.Path.GetFileName(file), lineNumber, display, start, length);
+        int lineLength = line.Length;
+
+        if (start < 0 || start > lineLength) { start = 0; length = 0; }
+        else if (start + length > lineLength) length = lineLength - start;
+
+        int winStart = Math.Max(0, start - PreviewContextBefore);
+        int winEnd = Math.Min(lineLength, start + length + PreviewContextAfter);
+        var sb = new StringBuilder();
+        if (winStart > 0) sb.Append('…');
+        int prefixLen = sb.Length;
+        sb.Append(line, winStart, winEnd - winStart);
+        if (winEnd < lineLength) sb.Append('…');
+        var preview = sb.ToString();
+        int previewStart = prefixLen + (start - winStart);
+        if (previewStart > preview.Length) { previewStart = 0; length = 0; }
+        else if (previewStart + length > preview.Length) length = preview.Length - previewStart;
+
+        var stored = line.Length > MaxStoredLine ? line[..MaxStoredLine] : line;
+
+        return new GrepMatch(
+            file, System.IO.Path.GetFileName(file), lineNumber,
+            stored, preview, previewStart, length, lineLength, occurrences);
     }
 
     static bool IsBinary(Stream stream)
@@ -336,7 +396,6 @@ public static class GrepEngine
     {
         readonly byte[] _needle;
         readonly bool _ignoreCase;
-        public int NeedleLength => _needle.Length;
 
         public ByteMatcher(string text, bool ignoreCase)
         {

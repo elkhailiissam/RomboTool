@@ -1,53 +1,118 @@
 #!/usr/bin/env python3
 """Generate RomboTool's app icon (1024px master PNG) from scratch with PIL.
 
-A white lightning bolt on a green->blue rounded-square ("squircle"), matching the
-"⚡ RomboTool" branding. Run via ../../make-icon.sh which also builds the .icns.
+A premium, macOS-native rounded-square ("squircle") with a diagonal blue→green
+gradient, a glass sheen, and a white magnifying glass whose lens holds a lightning
+bolt — "blazing-fast search". Run via ../../make-icon.sh which also builds the .icns.
 """
+import math
 from PIL import Image, ImageDraw, ImageFilter
 
 SIZE = 1024
-PAD = 100                      # transparent margin -> 824px content (macOS grid)
+PAD = 88
 RECT = (PAD, PAD, SIZE - PAD, SIZE - PAD)
-RADIUS = 186
-TOP = (0x2B, 0xD4, 0x66)       # vibrant green  (#2BD466)
-BOTTOM = (0x0A, 0x84, 0xFF)    # apple blue     (#0A84FF)
+RADIUS = 224
+
+BLUE = (0x3B, 0x82, 0xF6)      # #3B82F6
+CYAN = (0x38, 0xBD, 0xF8)      # #38BDF8
+GREEN = (0x22, 0xC5, 0x5E)     # #22C55E
 
 
-def vertical_gradient(w, h, top, bottom):
-    base = Image.new("RGB", (1, h))
-    for y in range(h):
-        t = y / (h - 1)
-        base.putpixel((0, y), tuple(round(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
-    return base.resize((w, h))
+def diagonal_gradient(size, c0, c1, c2):
+    """Blue (top-left) → cyan (middle) → green (bottom-right) along the diagonal.
+
+    Rendered at low resolution (smooth gradient) and upscaled for speed.
+    """
+    n = 160
+    small = Image.new("RGB", (n, n))
+    px = small.load()
+    for y in range(n):
+        for x in range(n):
+            t = (x + y) / (2 * (n - 1))
+            if t < 0.5:
+                u = t / 0.5
+                col = tuple(round(c0[i] + (c1[i] - c0[i]) * u) for i in range(3))
+            else:
+                u = (t - 0.5) / 0.5
+                col = tuple(round(c1[i] + (c2[i] - c1[i]) * u) for i in range(3))
+            px[x, y] = col
+    return small.resize((size, size), Image.BILINEAR)
+
+
+def squircle_mask():
+    mask = Image.new("L", (SIZE, SIZE), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(RECT, radius=RADIUS, fill=255)
+    return mask
+
+
+def thick_line(draw, p0, p1, width, fill):
+    draw.line([p0, p1], fill=fill, width=width)
+    r = width // 2
+    for (x, y) in (p0, p1):
+        draw.ellipse((x - r, y - r, x + r, y + r), fill=fill)
 
 
 def main():
     img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    mask = squircle_mask()
 
-    # Squircle mask + gradient fill
-    mask = Image.new("L", (SIZE, SIZE), 0)
-    ImageDraw.Draw(mask).rounded_rectangle(RECT, radius=RADIUS, fill=255)
-    grad = vertical_gradient(SIZE, SIZE, TOP, BOTTOM).convert("RGBA")
+    # Gradient fill inside the squircle
+    grad = diagonal_gradient(SIZE, BLUE, CYAN, GREEN).convert("RGBA")
     img.paste(grad, (0, 0), mask)
 
-    # Subtle top sheen for depth
+    # Soft ambient drop shadow of the whole tile (below), for depth on the desktop
+    # (kept subtle; macOS adds its own, so just a faint one).
+    # Top sheen highlight
     sheen = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(sheen)
-    sd.rounded_rectangle((PAD, PAD, SIZE - PAD, PAD + 300), radius=RADIUS, fill=(255, 255, 255, 38))
+    ImageDraw.Draw(sheen).rounded_rectangle(
+        (PAD, PAD, SIZE - PAD, PAD + 340), radius=RADIUS, fill=(255, 255, 255, 46))
     sheen.putalpha(Image.composite(sheen.getchannel("A"), Image.new("L", (SIZE, SIZE), 0), mask))
     img = Image.alpha_composite(img, sheen)
 
-    # Lightning bolt
-    bolt = [(585, 165), (372, 560), (508, 560), (448, 868),
-            (672, 470), (532, 470), (612, 165)]
+    # ── Magnifying glass geometry ──
+    cx, cy = 452, 430
+    r_out = 214
+    ring_w = 72
+    ring_bbox = (cx - r_out, cy - r_out, cx + r_out, cy + r_out)
 
+    ang = math.radians(45)
+    edge = (cx + r_out * math.cos(ang), cy + r_out * math.sin(ang))
+    handle_end = (edge[0] + 208 * math.cos(ang), edge[1] + 208 * math.sin(ang))
+    handle_w = 82
+
+    # Drop shadow for the glass
     shadow = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).polygon([(x + 6, y + 12) for x, y in bolt], fill=(0, 40, 20, 110))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(10))
+    sdraw = ImageDraw.Draw(shadow)
+    sdraw.ellipse((ring_bbox[0] + 8, ring_bbox[1] + 16, ring_bbox[2] + 8, ring_bbox[3] + 16),
+                  outline=(0, 20, 40, 130), width=ring_w)
+    thick_line(sdraw, (edge[0] + 8, edge[1] + 16), (handle_end[0] + 8, handle_end[1] + 16),
+               handle_w, (0, 20, 40, 130))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(14))
     img = Image.alpha_composite(img, shadow)
 
-    ImageDraw.Draw(img).polygon(bolt, fill=(255, 255, 255, 255))
+    # White glass (ring + handle)
+    glass = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    gdraw = ImageDraw.Draw(glass)
+    thick_line(gdraw, edge, handle_end, handle_w, (255, 255, 255, 255))
+    gdraw.ellipse(ring_bbox, outline=(255, 255, 255, 255), width=ring_w)
+
+    # Lens tint: a faint white glaze inside the lens so the bolt sits on "glass"
+    r_in = r_out - ring_w
+    gdraw.ellipse((cx - r_in, cy - r_in, cx + r_in, cy + r_in), fill=(255, 255, 255, 28))
+
+    # Lightning bolt inside the lens
+    bolt = [
+        (cx + 14, cy - 104),
+        (cx - 52, cy + 14),
+        (cx - 8, cy + 14),
+        (cx - 30, cy + 108),
+        (cx + 60, cy - 20),
+        (cx + 14, cy - 20),
+        (cx + 44, cy - 104),
+    ]
+    gdraw.polygon(bolt, fill=(255, 255, 255, 255))
+
+    img = Image.alpha_composite(img, glass)
 
     img.save("icon_1024.png")
     img.resize((256, 256), Image.LANCZOS).save("icon.png")  # window icon

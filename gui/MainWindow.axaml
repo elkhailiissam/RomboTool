@@ -1,199 +1,286 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctrl="using:RomboTool.Controls"
         x:Class="RomboTool.MainWindow"
         Icon="/Assets/icon.png"
-        Title="RomboTool" Width="1180" Height="780"
-        MinWidth="900" MinHeight="600"
-        Background="{StaticResource BgBrush}"
+        Title="RomboTool" Width="1240" Height="820"
+        MinWidth="960" MinHeight="640"
+        Background="{DynamicResource Bg}"
         WindowStartupLocation="CenterScreen">
 
     <DockPanel>
-        <!-- App bar -->
-        <Border DockPanel.Dock="Top" Padding="18,13" BorderThickness="0,0,0,1"
-                BorderBrush="#20242D">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                    <GradientStop Color="#1A1D24" Offset="0" />
-                    <GradientStop Color="#121419" Offset="1" />
-                </LinearGradientBrush>
-            </Border.Background>
+        <!-- ══════════════ App bar ══════════════ -->
+        <Border DockPanel.Dock="Top" Padding="18,12" Background="{DynamicResource Surface}">
             <Grid ColumnDefinitions="Auto,*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <!-- Logo badge -->
-                    <Border Width="40" Height="40" CornerRadius="11"
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="11" VerticalAlignment="Center">
+                    <Border Width="34" Height="34" CornerRadius="9"
                             Background="{StaticResource LogoGradient}"
-                            BoxShadow="0 4 14 -2 #663B82F6">
-                        <TextBlock Text="⚡" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            BoxShadow="0 3 12 -3 #663B82F6">
+                        <TextBlock Text="⚡" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel VerticalAlignment="Center" Spacing="1">
-                        <TextBlock Text="RomboTool" Classes="h1" />
-                        <TextBlock Text="fast search · large-file ready" FontSize="11.5"
-                                   Foreground="{StaticResource FaintBrush}" />
+                    <StackPanel VerticalAlignment="Center" Spacing="0">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <TextBlock Text="RomboTool" Classes="title" />
+                            <TextBlock Text="3.1" Classes="subtitle" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+                        </StackPanel>
+                        <TextBlock Text="blazing-fast search for huge files" Classes="subtitle" />
                     </StackPanel>
                 </StackPanel>
-                <Border Grid.Column="2" Classes="chip" Padding="10,4" VerticalAlignment="Center">
-                    <TextBlock Text="v3.0" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" />
-                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                    <Button x:Name="ThemeBtn" Classes="icon" Content="☾" Click="OnToggleTheme" ToolTip.Tip="Toggle light / dark theme" />
+                    <Button x:Name="AboutBtn" Classes="icon" Content="ⓘ" Click="OnAbout" ToolTip.Tip="About RomboTool" />
+                </StackPanel>
             </Grid>
         </Border>
-        <!-- Accent underline -->
-        <Border DockPanel.Dock="Top" Height="2" Background="{StaticResource AccentGradient}" Opacity="0.85" />
+        <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource Line}" />
 
-        <TabControl Margin="12,8,12,12" Padding="0">
+        <TabControl x:Name="Tabs" Margin="14,8,14,12" Padding="0">
 
-            <!-- ============================= GREP SEARCH ============================= -->
-            <TabItem Header="🔍  Search">
-                <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="0,10,0,0">
+            <!-- ══════════════════════════ SEARCH ══════════════════════════ -->
+            <TabItem Header="Search">
+                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="0,10,0,0">
 
                     <!-- ── Query card ── -->
-                    <Border Grid.Row="0" Classes="card" Padding="16" Margin="0,0,0,10">
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+                    <Border Grid.Row="0" Classes="card" Padding="18" Margin="0,0,0,12">
+                        <StackPanel Spacing="14">
 
                             <!-- Source -->
-                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,10">
-                                <TextBlock Grid.Column="0" Text="Search in" Classes="label" Width="70" />
-                                <TextBox Grid.Column="1" x:Name="PathBox"
-                                         Watermark="Pick a file or folder…" TextChanged="OnPathChanged" />
-                                <Button Grid.Column="2" Content="📄 File" Click="OnBrowseFile" Margin="8,0,0,0" />
-                                <Button Grid.Column="3" Content="📁 Folder" Click="OnBrowseFolder" Margin="6,0,0,0" />
-                                <Border Grid.Column="4" Classes="chip" x:Name="TypeChip" Margin="8,0,0,0" IsVisible="False">
-                                    <TextBlock x:Name="TypeChipText" FontSize="12" Foreground="{StaticResource TextBrush}" />
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                                <TextBlock Grid.Column="0" Text="SOURCE" Classes="section" Width="66" VerticalAlignment="Center" />
+                                <Border Grid.Column="1" Classes="tile" MinHeight="42" Padding="12,0">
+                                    <Grid>
+                                        <TextBlock x:Name="SourceHint" Text="Drop a file or folder here, or open one →"
+                                                   Foreground="{DynamicResource TextFaint}" VerticalAlignment="Center" />
+                                        <StackPanel x:Name="SourceChip" Orientation="Horizontal" Spacing="10"
+                                                    VerticalAlignment="Center" IsVisible="False">
+                                            <TextBlock x:Name="SourceIcon" Text="📄" FontSize="15" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="SourceName" Classes="mono" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Text}" VerticalAlignment="Center" />
+                                            <Border Background="{DynamicResource AccentSoft}" CornerRadius="6" Padding="7,2" VerticalAlignment="Center">
+                                                <TextBlock x:Name="SourceSize" FontSize="11.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Accent}" />
+                                            </Border>
+                                            <Button Classes="icon" Content="✕" FontSize="11" Padding="5" Click="OnClearSource"
+                                                    ToolTip.Tip="Clear source" />
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
+                                <Button Grid.Column="2" Content="Open File" Click="OnBrowseFile" Margin="10,0,0,0" ToolTip.Tip="⌘O" />
+                                <Button Grid.Column="3" Content="Open Folder" Click="OnBrowseFolder" Margin="6,0,0,0" ToolTip.Tip="⌘⇧O" />
+                                <Button Grid.Column="4" x:Name="RecentBtn" Content="Recent  ⌄" Classes="ghost"
+                                        Click="OnShowRecentFiles" Margin="6,0,0,0" />
                             </Grid>
 
-                            <!-- Folder-only filters -->
-                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" x:Name="FolderFilters" Margin="0,0,0,10">
-                                <TextBlock Grid.Column="0" Text="Files" Classes="label" Width="70" />
-                                <TextBox Grid.Column="1" x:Name="FilesBox" Text="*"
-                                         Watermark="*.txt *.log   (space-separated globs)" />
-                                <CheckBox Grid.Column="2" x:Name="RecurseChk" Content="Subfolders"
-                                          IsChecked="True" Margin="12,0,0,0" />
-                            </Grid>
+                            <!-- Spotlight search box -->
+                            <Border Classes="searchfield">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                    <TextBlock Grid.Column="0" Text="🔍" FontSize="16" Margin="16,0,4,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextMuted}" />
+                                    <TextBox Grid.Column="1" x:Name="SearchBox" Classes="plain" FontSize="15"
+                                             VerticalContentAlignment="Center"
+                                             Watermark="Search for text or a regex…   (⌘L to focus, Enter to run)"
+                                             KeyDown="OnSearchKeyDown" TextChanged="OnSearchTextChanged" />
+                                    <Button Grid.Column="2" x:Name="ClearSearchBtn" Classes="icon" Content="✕" FontSize="12"
+                                            IsVisible="False" Click="OnClearSearch" ToolTip.Tip="Clear" />
+                                    <Button Grid.Column="3" x:Name="HistoryBtn" Classes="icon" Content="🕘" FontSize="13"
+                                            Margin="0,0,8,0" Click="OnShowSearchHistory" ToolTip.Tip="Recent searches" />
+                                </Grid>
+                            </Border>
 
-                            <!-- Text + options -->
-                            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,10">
-                                <TextBlock Grid.Column="0" Text="Find" Classes="label" Width="70" />
-                                <TextBox Grid.Column="1" x:Name="SearchTextBox"
-                                         Watermark="text or regex to find…" KeyDown="OnSearchKeyDown" />
-                                <CheckBox Grid.Column="2" x:Name="RegexChk" Content="Regex" Margin="12,0,0,0" />
-                                <CheckBox Grid.Column="3" x:Name="IgnoreCaseChk" Content="Ignore case"
-                                          IsChecked="True" Margin="12,0,0,0" />
-                                <CheckBox Grid.Column="4" x:Name="InvertChk" Content="Invert" Margin="12,0,0,0" />
-                            </Grid>
+                            <!-- Advanced options -->
+                            <Expander x:Name="AdvancedExpander" Header="Advanced">
+                                <StackPanel Spacing="12" Margin="0,10,0,2">
+                                    <WrapPanel>
+                                        <CheckBox x:Name="RegexChk" Content="Regex" Margin="0,0,18,0" />
+                                        <CheckBox x:Name="IgnoreCaseChk" Content="Ignore case" IsChecked="True" Margin="0,0,18,0" />
+                                        <CheckBox x:Name="WholeWordChk" Content="Whole word" Margin="0,0,18,0" />
+                                        <CheckBox x:Name="InvertChk" Content="Invert (non-matching)" Margin="0,0,18,0" />
+                                        <CheckBox x:Name="MultilineChk" Content="Multiline" Margin="0,0,18,0" />
+                                    </WrapPanel>
+                                    <Grid ColumnDefinitions="Auto,Auto,*">
+                                        <CheckBox Grid.Column="0" x:Name="LimitChk" Content="Stop after" IsChecked="True"
+                                                  Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <NumericUpDown Grid.Column="1" x:Name="LimitBox" Value="50000" Minimum="1"
+                                                       Maximum="1000000000" Increment="10000" Width="150" FormatString="N0" />
+                                        <TextBlock Grid.Column="2" Text="matches" Classes="label" Margin="8,0,0,0" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" x:Name="FolderFilters">
+                                        <TextBlock Grid.Column="0" Text="Folder filter" Classes="label" Width="90" />
+                                        <TextBox Grid.Column="1" x:Name="FilesBox" Text="*"
+                                                 Watermark="*.txt *.log   (space-separated globs)" />
+                                        <CheckBox Grid.Column="2" x:Name="RecurseChk" Content="Subfolders" IsChecked="True" Margin="12,0,0,0" />
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
 
                             <!-- Actions -->
-                            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,Auto,Auto,*">
-                                <Button Grid.Column="0" x:Name="SearchBtn" Content="Search"
-                                        Classes="go" MinWidth="120" Click="OnRunGrep" />
-                                <Button Grid.Column="1" x:Name="StopBtn" Content="Stop" Classes="danger"
-                                        Margin="8,0,0,0" IsEnabled="False" Click="OnStopGrep" />
-                                <CheckBox Grid.Column="2" x:Name="LimitChk" Content="Stop after"
-                                          IsChecked="True" Margin="18,0,8,0" />
-                                <NumericUpDown Grid.Column="3" x:Name="LimitBox" Value="50000"
-                                               Minimum="1" Maximum="100000000" Increment="10000"
-                                               Width="150" FormatString="N0" />
+                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                <TextBlock Grid.Column="0" x:Name="HintText"
+                                           Text="Pick a source, type a query, and hit Search."
+                                           Foreground="{DynamicResource TextFaint}" FontSize="12" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" x:Name="PauseBtn" Content="Pause" Classes="ghost"
+                                        IsVisible="False" Margin="0,0,8,0" Click="OnPauseResume" />
+                                <Button Grid.Column="2" x:Name="SearchBtn" Content="Search" Classes="primary"
+                                        MinWidth="130" Click="OnRunGrep" ToolTip.Tip="⌘↵" />
                             </Grid>
-                        </Grid>
+                        </StackPanel>
                     </Border>
 
-                    <!-- ── Live progress card ── -->
-                    <Border Grid.Row="1" Classes="card" Padding="16,14" Margin="0,0,0,10">
-                        <Grid RowDefinitions="Auto,Auto,Auto">
-                            <!-- Stat tiles -->
-                            <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*,*" Margin="0,0,0,14">
-                                <Border Grid.Column="0" Classes="tile" Margin="0,0,5,0">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="PROGRESS" Classes="statlabel" />
-                                        <TextBlock x:Name="StatPercent" Text="0%" Classes="stat"
-                                                   Foreground="{StaticResource AccentBrush}" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="1" Classes="tile" Margin="5,0,5,0">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="DATA SCANNED" Classes="statlabel" />
-                                        <TextBlock x:Name="StatData" Text="—" Classes="stat"
-                                                   Foreground="{StaticResource TextBrush}" FontSize="16" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="2" Classes="tile" Margin="5,0,5,0">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="SPEED" Classes="statlabel" />
-                                        <TextBlock x:Name="StatSpeed" Text="—" Classes="stat"
-                                                   Foreground="{StaticResource TextBrush}" FontSize="16" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="3" Classes="tile" Margin="5,0,5,0">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="MATCHES" Classes="statlabel" />
-                                        <TextBlock x:Name="StatMatches" Text="0" Classes="stat"
-                                                   Foreground="{StaticResource GreenBrush}" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="4" Classes="tile" Margin="5,0,0,0">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="ELAPSED" Classes="statlabel" />
-                                        <TextBlock x:Name="StatElapsed" Text="0.0s" Classes="stat"
-                                                   Foreground="{StaticResource TextBrush}" FontSize="16" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <ProgressBar Grid.Row="1" x:Name="GrepProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,12" />
-
-                            <TextBlock Grid.Row="2" x:Name="StatCurrent"
-                                       Text="Ready — pick a file or folder, type what to find, and hit Search."
-                                       Foreground="{StaticResource MutedBrush}" FontSize="12"
-                                       TextTrimming="CharacterEllipsis" />
-                        </Grid>
+                    <!-- ── Status bar ── -->
+                    <Border Grid.Row="1" Classes="card" Padding="16,13" Margin="0,0,0,12">
+                        <StackPanel Spacing="11">
+                            <ProgressBar x:Name="GrepProgress" Minimum="0" Maximum="1" Value="0" />
+                            <WrapPanel>
+                                <StackPanel Classes="statitem" Spacing="1" MinWidth="78" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatPercent" Text="0%" Classes="stat" Foreground="{DynamicResource Accent}" />
+                                    <TextBlock Text="PROGRESS" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="88" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatSpeed" Text="—" Classes="stat" />
+                                    <TextBlock Text="SPEED" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="120" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatScanned" Text="—" Classes="stat" />
+                                    <TextBlock Text="SCANNED" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="88" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatMatches" Text="0" Classes="stat" Foreground="{DynamicResource Success}" />
+                                    <TextBlock Text="MATCHES" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="92" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatLines" Text="—" Classes="stat" />
+                                    <TextBlock Text="LINES/SEC" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="74" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatElapsed" Text="0.0s" Classes="stat" />
+                                    <TextBlock Text="ELAPSED" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="74" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatEta" Text="—" Classes="stat" />
+                                    <TextBlock Text="ETA" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="74" Margin="0,0,20,0">
+                                    <TextBlock x:Name="StatMem" Text="—" Classes="stat" />
+                                    <TextBlock Text="MEMORY" Classes="statlabel" />
+                                </StackPanel>
+                                <StackPanel Spacing="1" MinWidth="66">
+                                    <TextBlock x:Name="StatThreads" Text="—" Classes="stat" />
+                                    <TextBlock Text="THREADS" Classes="statlabel" />
+                                </StackPanel>
+                            </WrapPanel>
+                            <TextBlock x:Name="StatCurrent" Text="Ready." Classes="mono" FontSize="11.5"
+                                       Foreground="{DynamicResource TextFaint}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
                     </Border>
+
+                    <!-- ── Results toolbar ── -->
+                    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="2,0,2,8">
+                        <TextBlock Grid.Column="0" x:Name="ResultCount" Text="No results"
+                                   Foreground="{DynamicResource TextMuted}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+                            <Button Classes="ghost" Content="Select all" Click="OnSelectAll" />
+                            <Button Classes="ghost" Content="Invert" Click="OnInvertSelection" />
+                            <Border Width="1" Background="{DynamicResource Line}" Margin="6,4" />
+                            <Button Classes="ghost" Content="Copy" Click="OnCopySelected" />
+                            <Button x:Name="ExportBtn" Classes="ghost" Content="Export ⌄" Click="OnShowExportMenu" />
+                            <Button Classes="ghost" Content="→ Combo Filter" Click="OnMoveSelectedToCombo" />
+                            <Border Width="1" Background="{DynamicResource Line}" Margin="6,4" />
+                            <Button Classes="ghost" Content="Remove" Click="OnRemoveSelected" />
+                            <Button Classes="ghost danger" Content="Clear" Click="OnClearResults" />
+                        </StackPanel>
+                    </Grid>
 
                     <!-- ── Results ── -->
-                    <Border Grid.Row="2" Classes="inset">
-                        <DataGrid x:Name="ResultsGrid"
-                                  IsReadOnly="True"
-                                  GridLinesVisibility="None"
-                                  HeadersVisibility="Column"
-                                  CanUserResizeColumns="True"
-                                  CanUserSortColumns="False"
-                                  SelectionMode="Single"
-                                  DoubleTapped="OnOpenResult"
-                                  Background="Transparent"
-                                  FontFamily="Cascadia Code,Cascadia Mono,Menlo,Consolas,monospace"
-                                  FontSize="12.5">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="220" />
-                                <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" Width="90" />
-                                <DataGridTextColumn Header="Text" Binding="{Binding Line}" Width="*" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                    <Border Grid.Row="3" Classes="inset" ClipToBounds="True">
+                        <Grid>
+                            <DataGrid x:Name="ResultsGrid"
+                                      IsReadOnly="True"
+                                      GridLinesVisibility="None"
+                                      HeadersVisibility="Column"
+                                      CanUserResizeColumns="True"
+                                      CanUserSortColumns="False"
+                                      SelectionMode="Extended"
+                                      DoubleTapped="OnOpenResult"
+                                      Background="Transparent"
+                                      FontFamily="Cascadia Code,Cascadia Mono,Menlo,Consolas,monospace">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="210" />
+                                    <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" Width="90" />
+                                    <DataGridTemplateColumn Header="Preview" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ctrl:HighlightPreview Preview="{Binding Preview}"
+                                                        MatchStart="{Binding MatchStart}"
+                                                        MatchLength="{Binding MatchLength}"
+                                                        HighlightBrush="{DynamicResource Warning}"
+                                                        VerticalAlignment="Center" Margin="4,0"
+                                                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                        FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12.5" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Length" Binding="{Binding LineLength}" Width="86" />
+                                    <DataGridTextColumn Header="Matches" Binding="{Binding Occurrences}" Width="86" />
+                                </DataGrid.Columns>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Open file" Click="OnCtxOpen" />
+                                        <MenuItem Header="Reveal in Finder" Click="OnCtxReveal" />
+                                        <Separator />
+                                        <MenuItem Header="Copy line" Click="OnCtxCopyLine" />
+                                        <MenuItem Header="Copy match" Click="OnCtxCopyMatch" />
+                                        <MenuItem Header="Copy file path" Click="OnCtxCopyPath" />
+                                        <MenuItem Header="Copy selected" Click="OnCopySelected" />
+                                        <Separator />
+                                        <MenuItem Header="Send to new search" Click="OnCtxSendToSearch" />
+                                        <MenuItem Header="Move to Combo Filter" Click="OnMoveSelectedToCombo" />
+                                        <MenuItem Header="Export selected…" Click="OnCtxExportSelected" />
+                                        <Separator />
+                                        <MenuItem Header="Remove from results" Click="OnRemoveSelected" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                            </DataGrid>
+
+                            <!-- Empty state -->
+                            <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Spacing="8" MaxWidth="440" IsHitTestVisible="False">
+                                <TextBlock Text="🔎" FontSize="40" HorizontalAlignment="Center" Opacity="0.5" />
+                                <TextBlock x:Name="EmptyTitle" Text="Nothing to show yet" FontSize="16" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" Foreground="{DynamicResource TextMuted}" />
+                                <TextBlock x:Name="EmptyHint"
+                                           Text="Open a file or folder, type what to find, and press Search. Matches appear here with the line and a highlighted preview."
+                                           TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource TextFaint}" FontSize="12.5" />
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
-                    <TextBlock Grid.Row="3" x:Name="GrepStatus"
-                               Text="Double-click a result to open its file."
-                               Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="2,8,0,0" />
+                    <TextBlock Grid.Row="4" x:Name="GrepFooter"
+                               Text="Double-click a row to open its file  ·  right-click for actions  ·  ⌘C copy · ⌫ remove"
+                               Foreground="{DynamicResource TextFaint}" FontSize="11.5" Margin="2,8,0,0" />
                 </Grid>
             </TabItem>
 
-            <!-- ============================= COMBO FILTER ============================= -->
-            <TabItem Header="🧹  Combo Filter">
-                <Grid ColumnDefinitions="*,12,*" Margin="0,10,0,0">
+            <!-- ══════════════════════════ COMBO FILTER ══════════════════════════ -->
+            <TabItem Header="Combo Filter">
+                <Grid ColumnDefinitions="*,14,*" Margin="0,10,0,0">
 
                     <!-- Left: input -->
                     <Border Grid.Column="0" Classes="card" Padding="18">
                         <Grid RowDefinitions="Auto,*,Auto">
                             <StackPanel Grid.Row="0" Spacing="6">
                                 <TextBlock Text="INPUT FILES" Classes="section" />
-                                <TextBlock Text="Drag &amp; drop files here, or browse."
-                                           Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,6" />
+                                <TextBlock Text="Drag &amp; drop files, browse, or send results from Search."
+                                           Foreground="{DynamicResource TextFaint}" FontSize="12" Margin="0,0,0,6" />
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox Grid.Column="0" x:Name="InputBox" IsReadOnly="True" Text="No files…" />
-                                    <Button Grid.Column="1" Content="Browse" Classes="accent" Margin="6,0,0,0" Click="OnAddFiles" />
+                                    <Button Grid.Column="1" Content="Browse" Classes="primary" Margin="6,0,0,0" Click="OnAddFiles" />
                                     <Button Grid.Column="2" Content="Clear" Margin="6,0,0,0" Click="OnClearFiles" />
                                 </Grid>
                             </StackPanel>
 
                             <Border Grid.Row="1" Classes="inset" Margin="0,14" Padding="12">
-                                <TextBox x:Name="Preview" Background="Transparent" Foreground="#8FE3A6"
+                                <TextBox x:Name="Preview" Background="Transparent" Foreground="{DynamicResource Success}"
                                          FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12"
                                          IsReadOnly="True" BorderThickness="0" AcceptsReturn="True"
                                          TextWrapping="NoWrap" Text="Preview…" />
@@ -203,15 +290,13 @@
                                 <Border Grid.Column="0" Classes="tile" Margin="0,0,5,0">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="FILES" Classes="statlabel" />
-                                        <TextBlock x:Name="FileCount" Text="0" Classes="stat" FontSize="18"
-                                                   Foreground="{StaticResource TextBrush}" />
+                                        <TextBlock x:Name="FileCount" Text="0" Classes="stat" />
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Column="1" Classes="tile" Margin="5,0,0,0">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="TOTAL SIZE" Classes="statlabel" />
-                                        <TextBlock x:Name="SizeCount" Text="0 B" Classes="stat" FontSize="18"
-                                                   Foreground="{StaticResource TextBrush}" />
+                                        <TextBlock x:Name="SizeCount" Text="0 B" Classes="stat" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -234,7 +319,7 @@
                             </StackPanel>
 
                             <Border Grid.Row="1" Classes="inset" Margin="0,14" Padding="12">
-                                <TextBox x:Name="Output" Background="Transparent" Foreground="#9FB4FF"
+                                <TextBox x:Name="Output" Background="Transparent" Foreground="{DynamicResource Accent}"
                                          FontFamily="Cascadia Code,Menlo,Consolas,monospace" FontSize="12"
                                          IsReadOnly="True" BorderThickness="0" AcceptsReturn="True"
                                          TextWrapping="NoWrap" Text="Output preview…" />
@@ -244,39 +329,37 @@
                                 <Border Grid.Column="0" Classes="tile" Margin="0,0,5,0">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="VALID" Classes="statlabel" />
-                                        <TextBlock x:Name="ValidStat" Text="0" Classes="stat" FontSize="18" Foreground="{StaticResource GreenBrush}" />
+                                        <TextBlock x:Name="ValidStat" Text="0" Classes="stat" Foreground="{DynamicResource Success}" />
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Column="1" Classes="tile" Margin="5,0,5,0">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="EMAILS" Classes="statlabel" />
-                                        <TextBlock x:Name="EmailStat" Text="0" Classes="stat" FontSize="18" Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock x:Name="EmailStat" Text="0" Classes="stat" Foreground="{DynamicResource Accent}" />
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Column="2" Classes="tile" Margin="5,0,5,0">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="USERS" Classes="statlabel" />
-                                        <TextBlock x:Name="UserStat" Text="0" Classes="stat" FontSize="18" Foreground="#F5A524" />
+                                        <TextBlock x:Name="UserStat" Text="0" Classes="stat" Foreground="{DynamicResource Warning}" />
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Column="3" Classes="tile" Margin="5,0,0,0">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="PHONES" Classes="statlabel" />
-                                        <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" FontSize="18" Foreground="#A78BFA" />
+                                        <TextBlock x:Name="PhoneStat" Text="0" Classes="stat" Foreground="{DynamicResource Info}" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
 
-                            <ProgressBar Grid.Row="3" x:Name="ComboProgress" Minimum="0" Maximum="1" Value="0"
-                                         Foreground="{StaticResource GreenBrush}" Margin="0,0,0,10" />
+                            <ProgressBar Grid.Row="3" x:Name="ComboProgress" Minimum="0" Maximum="1" Value="0" Margin="0,0,0,12" />
 
                             <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto">
                                 <TextBlock Grid.Column="0" x:Name="ComboStatus" Text="Ready"
-                                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" FontSize="12" />
-                                <Button Grid.Column="1" x:Name="ComboStopBtn" Content="Stop" Classes="danger"
+                                           Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" FontSize="12" />
+                                <Button Grid.Column="1" x:Name="ComboStopBtn" Content="Stop" Classes="ghost danger"
                                         IsEnabled="False" Margin="0,0,8,0" Click="OnStopCombo" />
-                                <Button Grid.Column="2" x:Name="ComboGoBtn" Content="🚀 Start"
-                                        Classes="go" MinWidth="130" Click="OnRunCombo" />
+                                <Button Grid.Column="2" x:Name="ComboGoBtn" Content="Start" Classes="go" MinWidth="130" Click="OnRunCombo" />
                             </Grid>
                         </Grid>
                     </Border>

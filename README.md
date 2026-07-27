@@ -65,8 +65,24 @@ dumps included):
 - Literal searches scan raw bytes and only decode lines that actually match, so common terms
   fly (~300+ MB/s). Multi-file searches fan out across CPU cores; a single huge file streams
   sequentially for correct line numbers.
-- Results grid (File · Line · Text). **Double-click a result to open the file** in your
-  default editor. Press **Enter** in the Find box to search.
+
+### Premium desktop UI (v3.1)
+
+- **Spotlight-style search box** with clear button and recent-search history.
+- **Source picker** shows the file name + size (not a long path); drag & drop a file/folder,
+  or reopen from **Recent**.
+- **Advanced** panel: Regex · Ignore case · **Whole word** · Invert · **Multiline** · match limit.
+- **Unified status bar**: progress %, speed, data scanned, matches, lines/sec, elapsed, **ETA**,
+  memory, and thread count — plus the current file. **Pause / Resume** and **Stop** mid-search.
+- **Results table**: highlighted match previews (long lines shown as a `…context match context…`
+  snippet, never the raw giant line), plus **Length** and **Matches** columns, multi-select,
+  sortable-width columns, hover + selection states, and an empty state.
+- **Right-click a result**: open, reveal in Finder, copy line / match / path, send to a new
+  search, **move to Combo Filter**, export selected, remove.
+- **Export** results to **CSV / JSON / TXT** (all or selected).
+- **Keyboard**: `⌘O` open file · `⌘⇧O` open folder · `⌘L`/`⌘F` focus search · `⌘↵` search ·
+  `Esc` stop · `⌘A` select all · `⌘C` copy · `⌫` remove.
+- **Light & dark themes** (toggle in the header); recent files/searches and theme persist.
 
 ---
 
@@ -78,11 +94,14 @@ RomboTool/
 │   └── rombofilter.c           # C combo-filter engine + CLI
 ├── gui/                        # Avalonia (.NET 8) cross-platform GUI
 │   ├── Program.cs              # entry point
-│   ├── App.axaml(.cs)          # app + theme/styles
+│   ├── App.axaml(.cs)          # app + light/dark theme + styles
 │   ├── MainWindow.axaml(.cs)   # two-tab UI + wiring
+│   ├── AppState.cs             # persisted recent files/searches + theme
+│   ├── Controls/
+│   │   └── HighlightPreview.cs   # bolds the matched substring in result rows
 │   ├── Engine/
 │   │   ├── ComboFilterEngine.cs  # C# combo parser (used by the GUI)
-│   │   └── GrepEngine.cs         # cross-platform regex searcher
+│   │   └── GrepEngine.cs         # large-file searcher (byte-buffer, preview snippets)
 │   ├── Assets/                 # app icon (make_icon.py → icon.png + RomboTool.icns)
 │   └── RomboTool.csproj
 ├── build.sh                    # build CLI + GUI (macOS/Linux)
