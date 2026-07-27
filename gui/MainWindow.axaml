@@ -3,8 +3,8 @@
         xmlns:ctrl="using:RomboTool.Controls"
         x:Class="RomboTool.MainWindow"
         Icon="/Assets/icon.png"
-        Title="RomboTool" Width="1240" Height="820"
-        MinWidth="960" MinHeight="640"
+        Title="RomboTool" Width="1060" Height="700"
+        MinWidth="860" MinHeight="580"
         Background="{DynamicResource Bg}"
         WindowStartupLocation="CenterScreen">
 
@@ -12,18 +12,13 @@
         <!-- ══════════════ App bar ══════════════ -->
         <Border DockPanel.Dock="Top" Padding="18,12" Background="{DynamicResource Surface}">
             <Grid ColumnDefinitions="Auto,*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="11" VerticalAlignment="Center">
-                    <Border Width="34" Height="34" CornerRadius="9"
-                            Background="{StaticResource LogoGradient}"
-                            BoxShadow="0 3 12 -3 #663B82F6">
-                        <TextBlock Text="⚡" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Width="30" Height="30" CornerRadius="7" Background="{DynamicResource Accent}">
+                        <TextBlock Text="⚡" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel VerticalAlignment="Center" Spacing="0">
-                        <StackPanel Orientation="Horizontal" Spacing="7">
-                            <TextBlock Text="RomboTool" Classes="title" />
-                            <TextBlock Text="3.1" Classes="subtitle" VerticalAlignment="Bottom" Margin="0,0,0,2" />
-                        </StackPanel>
-                        <TextBlock Text="blazing-fast search for huge files" Classes="subtitle" />
+                    <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                        <TextBlock Text="RomboTool" Classes="title" VerticalAlignment="Center" />
+                        <TextBlock Text="3.2" Classes="subtitle" VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
 
@@ -77,9 +72,9 @@
                                 <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                                     <TextBlock Grid.Column="0" Text="🔍" FontSize="16" Margin="16,0,4,0" VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextMuted}" />
-                                    <TextBox Grid.Column="1" x:Name="SearchBox" Classes="plain" FontSize="15"
+                                    <TextBox Grid.Column="1" x:Name="SearchBox" Classes="plain" FontSize="14.5"
                                              VerticalContentAlignment="Center"
-                                             Watermark="Search for text or a regex…   (⌘L to focus, Enter to run)"
+                                             Watermark="Search text or regex…"
                                              KeyDown="OnSearchKeyDown" TextChanged="OnSearchTextChanged" />
                                     <Button Grid.Column="2" x:Name="ClearSearchBtn" Classes="icon" Content="✕" FontSize="12"
                                             IsVisible="False" Click="OnClearSearch" ToolTip.Tip="Clear" />
@@ -184,7 +179,8 @@
                             <Border Width="1" Background="{DynamicResource Line}" Margin="6,4" />
                             <Button Classes="ghost" Content="Copy" Click="OnCopySelected" />
                             <Button x:Name="ExportBtn" Classes="ghost" Content="Export ⌄" Click="OnShowExportMenu" />
-                            <Button Classes="ghost" Content="→ Combo Filter" Click="OnMoveSelectedToCombo" />
+                            <Button Classes="ghost" Content="Send to Combo" Click="OnMoveAllToCombo"
+                                    ToolTip.Tip="Send all matched files to the Combo Filter" />
                             <Border Width="1" Background="{DynamicResource Line}" Margin="6,4" />
                             <Button Classes="ghost" Content="Remove" Click="OnRemoveSelected" />
                             <Button Classes="ghost danger" Content="Clear" Click="OnClearResults" />
@@ -234,7 +230,7 @@
                                         <MenuItem Header="Copy selected" Click="OnCopySelected" />
                                         <Separator />
                                         <MenuItem Header="Send to new search" Click="OnCtxSendToSearch" />
-                                        <MenuItem Header="Move to Combo Filter" Click="OnMoveSelectedToCombo" />
+                                        <MenuItem Header="Send all to Combo Filter" Click="OnMoveAllToCombo" />
                                         <MenuItem Header="Export selected…" Click="OnCtxExportSelected" />
                                         <Separator />
                                         <MenuItem Header="Remove from results" Click="OnRemoveSelected" />
@@ -249,14 +245,14 @@
                                 <TextBlock x:Name="EmptyTitle" Text="Nothing to show yet" FontSize="16" FontWeight="SemiBold"
                                            HorizontalAlignment="Center" Foreground="{DynamicResource TextMuted}" />
                                 <TextBlock x:Name="EmptyHint"
-                                           Text="Open a file or folder, type what to find, and press Search. Matches appear here with the line and a highlighted preview."
+                                           Text="Open a file or folder, type a query, and press Search."
                                            TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource TextFaint}" FontSize="12.5" />
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <TextBlock Grid.Row="4" x:Name="GrepFooter"
-                               Text="Double-click a row to open its file  ·  right-click for actions  ·  ⌘C copy · ⌫ remove"
+                               Text="Double-click to open · right-click for more"
                                Foreground="{DynamicResource TextFaint}" FontSize="11.5" Margin="2,8,0,0" />
                 </Grid>
             </TabItem>

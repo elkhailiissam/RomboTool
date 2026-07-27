@@ -60,12 +60,10 @@ def main():
     grad = diagonal_gradient(SIZE, BLUE, CYAN, GREEN).convert("RGBA")
     img.paste(grad, (0, 0), mask)
 
-    # Soft ambient drop shadow of the whole tile (below), for depth on the desktop
-    # (kept subtle; macOS adds its own, so just a faint one).
-    # Top sheen highlight
+    # Very faint top sheen (flat, understated — no glossy highlight)
     sheen = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     ImageDraw.Draw(sheen).rounded_rectangle(
-        (PAD, PAD, SIZE - PAD, PAD + 340), radius=RADIUS, fill=(255, 255, 255, 46))
+        (PAD, PAD, SIZE - PAD, PAD + 300), radius=RADIUS, fill=(255, 255, 255, 16))
     sheen.putalpha(Image.composite(sheen.getchannel("A"), Image.new("L", (SIZE, SIZE), 0), mask))
     img = Image.alpha_composite(img, sheen)
 
@@ -80,14 +78,14 @@ def main():
     handle_end = (edge[0] + 208 * math.cos(ang), edge[1] + 208 * math.sin(ang))
     handle_w = 82
 
-    # Drop shadow for the glass
+    # Faint drop shadow for the glass (subtle depth, not glossy)
     shadow = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     sdraw = ImageDraw.Draw(shadow)
-    sdraw.ellipse((ring_bbox[0] + 8, ring_bbox[1] + 16, ring_bbox[2] + 8, ring_bbox[3] + 16),
-                  outline=(0, 20, 40, 130), width=ring_w)
-    thick_line(sdraw, (edge[0] + 8, edge[1] + 16), (handle_end[0] + 8, handle_end[1] + 16),
-               handle_w, (0, 20, 40, 130))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(14))
+    sdraw.ellipse((ring_bbox[0] + 5, ring_bbox[1] + 10, ring_bbox[2] + 5, ring_bbox[3] + 10),
+                  outline=(0, 20, 40, 70), width=ring_w)
+    thick_line(sdraw, (edge[0] + 5, edge[1] + 10), (handle_end[0] + 5, handle_end[1] + 10),
+               handle_w, (0, 20, 40, 70))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(10))
     img = Image.alpha_composite(img, shadow)
 
     # White glass (ring + handle)
@@ -96,9 +94,9 @@ def main():
     thick_line(gdraw, edge, handle_end, handle_w, (255, 255, 255, 255))
     gdraw.ellipse(ring_bbox, outline=(255, 255, 255, 255), width=ring_w)
 
-    # Lens tint: a faint white glaze inside the lens so the bolt sits on "glass"
+    # Lens tint: a barely-there glaze so the bolt sits on "glass"
     r_in = r_out - ring_w
-    gdraw.ellipse((cx - r_in, cy - r_in, cx + r_in, cy + r_in), fill=(255, 255, 255, 28))
+    gdraw.ellipse((cx - r_in, cy - r_in, cx + r_in, cy + r_in), fill=(255, 255, 255, 12))
 
     # Lightning bolt inside the lens
     bolt = [

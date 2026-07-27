@@ -419,13 +419,13 @@ public partial class MainWindow : Window
 
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            SuggestedFileName = "results.csv",
-            DefaultExtension = "csv",
+            SuggestedFileName = "results.txt",
+            DefaultExtension = "txt",
             FileTypeChoices = new[]
             {
+                new FilePickerFileType("Text") { Patterns = new[] { "*.txt" } },
                 new FilePickerFileType("CSV") { Patterns = new[] { "*.csv" } },
                 new FilePickerFileType("JSON") { Patterns = new[] { "*.json" } },
-                new FilePickerFileType("Text") { Patterns = new[] { "*.txt" } },
             },
         });
         if (file == null) return;
@@ -453,13 +453,13 @@ public partial class MainWindow : Window
                 });
                 w.Write(JsonSerializer.Serialize(arr, new JsonSerializerOptions { WriteIndented = true }));
                 break;
-            case ".txt":
-                foreach (var r in rows) w.WriteLine($"{r.FileName}:{r.LineNumber}: {r.Line}");
-                break;
-            default: // csv
+            case ".csv":
                 w.WriteLine("File,Line,Length,Occurrences,Match,Text");
                 foreach (var r in rows)
                     w.WriteLine($"{Csv(r.FullPath)},{r.LineNumber},{r.LineLength},{r.Occurrences},{Csv(r.MatchText)},{Csv(r.Line)}");
+                break;
+            default: // txt
+                foreach (var r in rows) w.WriteLine($"{r.FileName}:{r.LineNumber}: {r.Line}");
                 break;
         }
     }
@@ -468,10 +468,14 @@ public partial class MainWindow : Window
 
     // ─────────────────────────── Move to Combo Filter ────────────────────────
 
-    void OnMoveSelectedToCombo(object? sender, RoutedEventArgs e)
+    void OnMoveAllToCombo(object? sender, RoutedEventArgs e)
     {
-        var files = Selected().Select(r => r.FullPath).Distinct().Where(File.Exists).ToList();
-        if (files.Count == 0) { StatCurrent.Text = "Select some results first."; return; }
+        // Move everything, no selection needed: every file that produced a match,
+        // or the current source file when there are no results yet.
+        var files = _grepRows.Select(r => r.FullPath).Distinct().Where(File.Exists).ToList();
+        if (files.Count == 0 && _sourceIsFile && File.Exists(_sourcePath))
+            files.Add(_sourcePath);
+        if (files.Count == 0) { StatCurrent.Text = "Nothing to send — run a search first."; return; }
         AddComboFiles(files);
         Tabs.SelectedIndex = 1;
         ComboStatus.Text = $"Added {files.Count} file(s) from Search.";

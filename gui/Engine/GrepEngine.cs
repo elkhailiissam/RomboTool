@@ -236,8 +236,9 @@ public static class GrepEngine
                 file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
                 ReadBufferSize, FileOptions.SequentialScan);
 
-            // Only sniff for binary noise in folder mode; a hand-picked file is searched as-is.
-            if (!o.IsSingleFile && IsBinary(stream))
+            // Only sniff for binary noise in folder mode, and never reject a text-extension
+            // file — combo dumps are .txt with occasional NUL noise and must stay searchable.
+            if (!o.IsSingleFile && !LooksTextual(file) && IsBinary(stream))
                 return;   // finally still counts the file as done
 
             var buf = new byte[ReadBufferSize];
@@ -379,16 +380,28 @@ public static class GrepEngine
             stored, preview, previewStart, length, lineLength, occurrences);
     }
 
+    static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".txt", ".log", ".csv", ".tsv", ".json", ".xml", ".html", ".htm", ".md",
+        ".ini", ".conf", ".cfg", ".yaml", ".yml", ".sql", ".list", ".text", ".dat",
+    };
+
+    static bool LooksTextual(string file) => TextExtensions.Contains(System.IO.Path.GetExtension(file));
+
     static bool IsBinary(Stream stream)
     {
         int cap = (int)Math.Min(BinarySniffBytes, stream.Length);
+        if (cap == 0) return false;
         var buffer = new byte[cap];
         int read = stream.Read(buffer, 0, cap);
         stream.Seek(0, SeekOrigin.Begin);
+        if (read == 0) return false;
+
+        // Ratio-based: only a genuinely binary file (image, executable, archive) has a high
+        // share of NUL bytes. Combo dumps with a little NUL noise stay searchable.
         int nul = 0;
-        for (int i = 0; i < read; i++)
-            if (buffer[i] == 0 && ++nul > 2) return true;   // a couple of stray NULs is tolerated
-        return false;
+        for (int i = 0; i < read; i++) if (buffer[i] == 0) nul++;
+        return nul * 100L / read > 30;
     }
 
     /// <summary>Literal substring search over raw bytes with ASCII case folding.</summary>
