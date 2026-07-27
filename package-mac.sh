@@ -24,8 +24,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleName</key><string>RomboTool</string>
     <key>CFBundleDisplayName</key><string>RomboTool</string>
     <key>CFBundleIdentifier</key><string>com.rombotool.app</string>
-    <key>CFBundleVersion</key><string>3.3.0</string>
-    <key>CFBundleShortVersionString</key><string>3.3</string>
+    <key>CFBundleVersion</key><string>3.4.0</string>
+    <key>CFBundleShortVersionString</key><string>3.4</string>
     <key>CFBundleExecutable</key><string>RomboTool</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>

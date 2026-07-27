@@ -12,11 +12,10 @@ namespace RomboTool.Engine;
 /// <summary>Search parameters for a grep run.</summary>
 public sealed class GrepOptions
 {
-    /// <summary>A folder OR a single file. Auto-detected.</summary>
-    public string Path = "";
-    /// <summary>Set when the user explicitly picked one file: bypasses size cap + binary sniff.</summary>
-    public bool IsSingleFile;
+    /// <summary>One or more sources — each a file or a folder.</summary>
+    public List<string> Sources = new();
     public string FilePatterns = "*";   // space-separated DOS-style globs, e.g. "*.txt *.log"
+    public string ExcludePatterns = ""; // space-separated globs to skip, e.g. "*.zip *.jpg"
     public string Text = "";
     public bool Regex;
     public bool IgnoreCase = true;
@@ -30,6 +29,9 @@ public sealed class GrepOptions
     /// <summary>True when the raw-byte fast path applies (plain literal, no word boundary).</summary>
     public bool UsesByteMatcher => !Regex && !InvertMatch && !WholeWord;
 }
+
+/// <summary>A file to search, plus whether the user picked it explicitly (bypasses the binary sniff).</summary>
+public readonly record struct SearchTarget(string Path, bool Explicit);
 
 /// <summary>A single matching line, shaped for the results grid.</summary>
 public readonly record struct GrepMatch(
@@ -112,13 +114,10 @@ public static class GrepEngine
         catch { return false; }
     }
 
-    public static List<string> EnumerateFiles(GrepOptions o)
+    public static List<SearchTarget> EnumerateFiles(GrepOptions o)
     {
-        // Single explicit file, or a path that happens to be a file.
-        if (o.IsSingleFile || (File.Exists(o.Path) && !IsDirectory(o.Path)))
-            return new List<string> { o.Path };
-
         var glob = BuildGlob(o.FilePatterns);
+        var exclude = string.IsNullOrWhiteSpace(o.ExcludePatterns) ? null : BuildGlob(o.ExcludePatterns);
         var enumOpts = new EnumerationOptions
         {
             RecurseSubdirectories = o.Recurse,
@@ -126,10 +125,26 @@ public static class GrepEngine
             AttributesToSkip = FileAttributes.System | FileAttributes.ReparsePoint,
         };
 
-        var result = new List<string>();
-        foreach (var path in Directory.EnumerateFiles(o.Path, "*", enumOpts))
-            if (glob.IsMatch(System.IO.Path.GetFileName(path)))
-                result.Add(path);
+        var result = new List<SearchTarget>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var src in o.Sources)
+        {
+            if (File.Exists(src) && !IsDirectory(src))
+            {
+                if (seen.Add(src)) result.Add(new SearchTarget(src, true));   // explicit file
+            }
+            else if (IsDirectory(src))
+            {
+                foreach (var path in Directory.EnumerateFiles(src, "*", enumOpts))
+                {
+                    var name = System.IO.Path.GetFileName(path);
+                    if (!glob.IsMatch(name)) continue;
+                    if (exclude != null && exclude.IsMatch(name)) continue;
+                    if (seen.Add(path)) result.Add(new SearchTarget(path, false));
+                }
+            }
+        }
         return result;
     }
 
@@ -176,7 +191,7 @@ public static class GrepEngine
 
         // Cheap pre-pass: total bytes for an accurate progress bar (Length only, no reads).
         foreach (var f in files)
-            try { state.BytesTotal += new FileInfo(f).Length; } catch { }
+            try { state.BytesTotal += new FileInfo(f.Path).Length; } catch { }
 
         onProgress(state.Snapshot());
 
@@ -214,10 +229,11 @@ public static class GrepEngine
     }
 
     static void SearchOneFile(
-        string file, GrepOptions o, ByteMatcher? matcher, Regex? regex,
+        SearchTarget target, GrepOptions o, ByteMatcher? matcher, Regex? regex,
         Action<List<GrepMatch>> onFileMatches, State state, Action<bool> report,
         CancellationToken ct, ManualResetEventSlim? pauseGate)
     {
+        var file = target.Path;
         state.CurrentFile = System.IO.Path.GetFileName(file);
         List<GrepMatch>? matches = null;
         long length = 0, counted = 0;
@@ -232,9 +248,10 @@ public static class GrepEngine
                 file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
                 ReadBufferSize, FileOptions.SequentialScan);
 
-            // Only sniff for binary noise in folder mode, and never reject a text-extension
-            // file — combo dumps are .txt with occasional NUL noise and must stay searchable.
-            if (!o.IsSingleFile && !LooksTextual(file) && IsBinary(stream))
+            // Files reached through a folder get a binary sniff (never rejecting a text-extension
+            // file — combo dumps are .txt with occasional NUL noise). Explicitly-picked files
+            // are searched as-is.
+            if (!target.Explicit && !LooksTextual(file) && IsBinary(stream))
                 return;   // finally still counts the file as done
 
             var buf = new byte[ReadBufferSize];

@@ -12,12 +12,34 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using RomboTool.Engine;
 
 namespace RomboTool;
+
+/// <summary>A source (file or folder) shown as a removable chip.</summary>
+public sealed class SourceItem
+{
+    public string Path { get; }
+    public string Name { get; }
+    public string SizeText { get; }
+    public bool IsFolder { get; }
+    public Geometry? Icon { get; }
+
+    public SourceItem(string path, bool isFolder, string sizeText, Geometry? icon)
+    {
+        Path = path;
+        IsFolder = isFolder;
+        SizeText = sizeText;
+        Icon = icon;
+        var trimmed = path.TrimEnd(System.IO.Path.DirectorySeparatorChar, '/');
+        var name = System.IO.Path.GetFileName(trimmed);
+        Name = string.IsNullOrEmpty(name) ? trimmed : name;
+    }
+}
 
 public partial class MainWindow : Window
 {
@@ -26,9 +48,10 @@ public partial class MainWindow : Window
 
     readonly ObservableCollection<GrepMatch> _grepRows = new();
     readonly ObservableCollection<string> _comboFiles = new();
+    readonly ObservableCollection<SourceItem> _sources = new();
 
     CancellationTokenSource? _grepCancel, _comboCancel;
-    readonly ManualResetEventSlim _pauseGate = new(true);   // set = running, reset = paused
+    readonly ManualResetEventSlim _pauseGate = new(true);
     bool _grepBusy, _comboBusy, _grepCapped, _paused, _dark = true;
 
     readonly object _grepProgLock = new();
@@ -36,9 +59,6 @@ public partial class MainWindow : Window
     readonly Stopwatch _grepSw = new();
     readonly DispatcherTimer _grepTimer;
     readonly Process _proc = Process.GetCurrentProcess();
-
-    string _sourcePath = "";
-    bool _sourceIsFile;
 
     readonly AppState _state = AppState.Load();
 
@@ -50,7 +70,9 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         ResultsGrid.ItemsSource = _grepRows;
-        _grepRows.CollectionChanged += (_, _) => { UpdateResultCount(); UpdateEmptyState(); };
+        SourcesList.ItemsSource = _sources;
+        _grepRows.CollectionChanged += (_, _) => { UpdateResultCount(); UpdateEmptyState(); UpdateToolbarState(); };
+        _sources.CollectionChanged += (_, _) => SourceHint.IsVisible = _sources.Count == 0;
 
         _grepTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _grepTimer.Tick += (_, _) => RenderGrepStats();
@@ -58,7 +80,6 @@ public partial class MainWindow : Window
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         DragDrop.SetAllowDrop(this, true);
-
         AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel);
 
         _dark = !string.Equals(_state.Theme, "Light", StringComparison.OrdinalIgnoreCase);
@@ -66,90 +87,80 @@ public partial class MainWindow : Window
 
         UpdateResultCount();
         UpdateEmptyState();
+        UpdateToolbarState();
     }
 
-    // ─────────────────────────────── Theme / About ──────────────────────────
+    Geometry? Ico(string key) =>
+        Application.Current!.TryGetResource(key, null, out var r) ? r as Geometry : null;
+
+    // ─────────────────────────────── Theme / Help ───────────────────────────
 
     void OnToggleTheme(object? sender, RoutedEventArgs e) { _dark = !_dark; ApplyTheme(_dark); _state.Save(); }
 
     void ApplyTheme(bool dark)
     {
         Application.Current!.RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light;
-        if (ThemeBtn != null) ThemeBtn.Content = dark ? "☾" : "☀";
+        if (ThemeIcon != null) ThemeIcon.Data = Ico(dark ? "IconMoon" : "IconSun");
         _state.Theme = dark ? "Dark" : "Light";
     }
 
-    void OnAbout(object? sender, RoutedEventArgs e)
-    {
-        StatCurrent.Text = "RomboTool 3.1 — fast search & combo filtering for multi-GB files. Built with Avalonia.";
-    }
+    void OnHelp(object? sender, RoutedEventArgs e) =>
+        StatCurrent.Text = "Shortcuts:  ⌘O add file · ⌘⇧O add folder · ⌘L/⌘F focus search · ⌘↵ search · Esc stop · ⌘A select all · ⌘C copy · ⌫ remove";
 
-    // ─────────────────────────────── Source ─────────────────────────────────
+    // ─────────────────────────────── Sources ────────────────────────────────
 
     async void OnBrowseFolder(object? sender, RoutedEventArgs e)
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { AllowMultiple = false });
-        if (folders.Count > 0) SetSource(folders[0].Path.LocalPath);
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { AllowMultiple = true });
+        foreach (var f in folders) AddSource(f.Path.LocalPath);
     }
 
     async void OnBrowseFile(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            AllowMultiple = false,
+            AllowMultiple = true,
             FileTypeFilter = new[]
             {
                 new FilePickerFileType("Text & logs") { Patterns = new[] { "*.txt", "*.log", "*.csv" } },
                 FilePickerFileTypes.All,
             },
         });
-        if (files.Count > 0) SetSource(files[0].Path.LocalPath);
+        foreach (var f in files) AddSource(f.Path.LocalPath);
     }
 
-    void SetSource(string path)
+    void AddSource(string path)
     {
         path = path.Trim();
         bool isFile = File.Exists(path) && !GrepEngine.IsDirectory(path);
         bool isDir = Directory.Exists(path);
-        if (!isFile && !isDir) { HintText.Text = "⚠ That path doesn't exist."; return; }
+        if (!isFile && !isDir) return;
+        if (_sources.Any(s => string.Equals(s.Path, path, StringComparison.OrdinalIgnoreCase))) return;
 
-        _sourcePath = path;
-        _sourceIsFile = isFile;
-
-        SourceHint.IsVisible = false;
-        SourceChip.IsVisible = true;
-        SourceName.Text = isFile ? Path.GetFileName(path) : path;
-        SourceIcon.Text = isFile ? "📄" : "📁";
-        if (isFile)
-        {
-            long size = 0;
-            try { size = new FileInfo(path).Length; } catch { }
-            SourceSize.Text = HumanBytes(size);
-        }
-        else SourceSize.Text = "folder";
-        FolderFilters.IsEnabled = !isFile;
-        FolderFilters.Opacity = isFile ? 0.4 : 1.0;
+        string size = "";
+        if (isFile) { try { size = HumanBytes(new FileInfo(path).Length); } catch { } }
+        _sources.Add(new SourceItem(path, isDir, size, Ico(isDir ? "IconFolder" : "IconFile")));
 
         _state.PushRecentFile(path);
         _state.Save();
         HintText.Text = "Ready — type a query and hit Search.";
     }
 
-    void OnClearSource(object? sender, RoutedEventArgs e)
+    void OnRemoveSource(object? sender, RoutedEventArgs e)
     {
-        _sourcePath = "";
-        SourceChip.IsVisible = false;
-        SourceHint.IsVisible = true;
-        FolderFilters.IsEnabled = true;
-        FolderFilters.Opacity = 1.0;
+        if (sender is Button { Tag: string path })
+        {
+            var item = _sources.FirstOrDefault(s => s.Path == path);
+            if (item != null) _sources.Remove(item);
+        }
     }
 
     void OnShowRecentFiles(object? sender, RoutedEventArgs e)
     {
         var items = _state.RecentFiles
-            .Select(p => ((string label, Action act))(ShortPath(p), () => SetSource(p)))
+            .Select(p => ((string label, Action act))(ShortPath(p), () => AddSource(p)))
             .ToList();
-        ShowMenu(RecentBtn, items, "No recent files");
+        ShowMenu(RecentBtn, items, "No recent items");
     }
 
     // ─────────────────────────────── Search box ─────────────────────────────
@@ -172,25 +183,30 @@ public partial class MainWindow : Window
         ShowMenu(HistoryBtn, items, "No recent searches");
     }
 
+    void OnToggleAdvanced(object? sender, RoutedEventArgs e)
+    {
+        AdvancedBody.IsVisible = !AdvancedBody.IsVisible;
+        AdvancedChevron.RenderTransform = AdvancedBody.IsVisible
+            ? new RotateTransform(180) : null;
+    }
+
     // ─────────────────────────────── Run search ─────────────────────────────
 
     async void OnRunGrep(object? sender, RoutedEventArgs e)
     {
-        if (_grepBusy) { OnStopGrep(); return; }   // the button doubles as Stop while running
+        if (_grepBusy) { OnStopGrep(); return; }
 
-        var path = _sourcePath;
+        var sources = _sources.Select(s => s.Path).Where(p => File.Exists(p) || Directory.Exists(p)).ToList();
         var text = SearchBox.Text ?? "";
-        bool isFile = File.Exists(path) && !GrepEngine.IsDirectory(path);
-        bool isDir = Directory.Exists(path);
-        if (!isFile && !isDir) { HintText.Text = "⚠ Pick a file or folder first (Open File / Open Folder)."; return; }
+        if (sources.Count == 0) { HintText.Text = "⚠ Add a file or folder first."; return; }
         if (text.Length == 0) { HintText.Text = "⚠ Type something to search for."; SearchBox.Focus(); return; }
 
         long maxMatches = LimitChk.IsChecked == true ? (long)(LimitBox.Value ?? 0m) : 0;
         var options = new GrepOptions
         {
-            Path = path,
-            IsSingleFile = isFile,
+            Sources = sources,
             FilePatterns = string.IsNullOrWhiteSpace(FilesBox.Text) ? "*" : FilesBox.Text!.Trim(),
+            ExcludePatterns = ExcludeBox.Text?.Trim() ?? "",
             Text = text,
             Regex = RegexChk.IsChecked == true,
             IgnoreCase = IgnoreCaseChk.IsChecked == true,
@@ -216,9 +232,10 @@ public partial class MainWindow : Window
         _pauseGate.Set();
         _grepCancel = new CancellationTokenSource();
         _grepRows.Clear();
-        SearchBtn.Content = "Stop";
+        SearchBtnText.Text = "Stop";
+        SearchBtnIcon.Data = Ico("IconStop");
         PauseBtn.IsVisible = true;
-        PauseBtn.Content = "Pause";
+        SetPauseButton(false);
         GrepProgress.Value = 0;
         SetGrepProg(default);
         _grepSw.Restart();
@@ -249,7 +266,6 @@ public partial class MainWindow : Window
             bool limitHit = options.MaxMatches > 0 && fin.MatchCount >= options.MaxMatches && !cancelled;
             bool completed = !cancelled && !limitHit;
 
-            // Only a genuine finish reaches 100%; a limit/cancel stop keeps the true byte progress.
             if (completed) { GrepProgress.Value = 1; StatPercent.Text = "100%"; }
 
             double pctScanned = fin.BytesTotal > 0 ? 100.0 * fin.BytesDone / fin.BytesTotal : 100;
@@ -260,8 +276,7 @@ public partial class MainWindow : Window
             if (cancelled)
                 StatCurrent.Text = $"Stopped at {where} — {fin.MatchCount:N0} matches{capNote}.";
             else if (limitHit)
-                StatCurrent.Text = $"Reached your {options.MaxMatches:N0}-match limit at {where}. " +
-                                   $"Turn off “Stop after” to scan the rest{capNote}.";
+                StatCurrent.Text = $"Reached your {options.MaxMatches:N0}-match limit at {where}. Turn off “Stop after” to scan the rest{capNote}.";
             else
                 StatCurrent.Text = $"Done — {fin.MatchCount:N0} matches{filesNote} in {_grepSw.Elapsed.TotalSeconds:F1}s{capNote}.";
 
@@ -279,8 +294,10 @@ public partial class MainWindow : Window
         finally
         {
             _grepBusy = false;
-            SearchBtn.Content = "Search";
+            SearchBtnText.Text = "Search";
+            SearchBtnIcon.Data = Ico("IconSearch");
             PauseBtn.IsVisible = false;
+            HeaderStatus.Text = "";
             _grepCancel?.Dispose();
             _grepCancel = null;
         }
@@ -288,7 +305,7 @@ public partial class MainWindow : Window
 
     void OnStopGrep()
     {
-        _pauseGate.Set();          // release a paused worker so it can observe cancellation
+        _pauseGate.Set();
         _grepCancel?.Cancel();
         StatCurrent.Text = "Stopping…";
     }
@@ -297,8 +314,16 @@ public partial class MainWindow : Window
     {
         if (!_grepBusy) return;
         _paused = !_paused;
-        if (_paused) { _pauseGate.Reset(); _grepSw.Stop(); PauseBtn.Content = "Resume"; StatCurrent.Text = "Paused."; }
-        else { _pauseGate.Set(); _grepSw.Start(); PauseBtn.Content = "Pause"; }
+        if (_paused) { _pauseGate.Reset(); _grepSw.Stop(); }
+        else { _pauseGate.Set(); _grepSw.Start(); }
+        SetPauseButton(_paused);
+        if (_paused) StatCurrent.Text = "Paused.";
+    }
+
+    void SetPauseButton(bool paused)
+    {
+        PauseText.Text = paused ? "Resume" : "Pause";
+        PauseIcon.Data = Ico(paused ? "IconPlay" : "IconPause");
     }
 
     void RenderGrepStats()
@@ -309,36 +334,47 @@ public partial class MainWindow : Window
 
         GrepProgress.Value = pct;
         StatPercent.Text = $"{pct * 100:F0}%";
-        StatScanned.Text = p.BytesTotal > 0 ? $"{HumanBytes(p.BytesScanned)} / {HumanBytes(p.BytesTotal)}" : HumanBytes(p.BytesScanned);
         StatMatches.Text = p.MatchCount.ToString("N0");
+        StatScanned.Text = p.BytesTotal > 0 ? $"{HumanBytes(p.BytesScanned)} / {HumanBytes(p.BytesTotal)}" : "";
         StatElapsed.Text = secs < 60 ? $"{secs:F1}s" : $"{(int)(secs / 60)}m {secs % 60:F0}s";
 
         if (secs > 0.05)
         {
             double bps = p.BytesScanned / secs;
             StatSpeed.Text = $"{HumanBytes((long)bps)}/s";
-            StatLines.Text = $"{p.LinesScanned / secs / 1000:F0}k";
+            StatLines.Text = $"{p.LinesScanned / secs / 1000:F0}k lines/s";
             long remaining = Math.Max(0, p.BytesTotal - p.BytesDone);
-            StatEta.Text = _grepBusy && !_paused && bps > 1 && remaining > 0 ? FormatSeconds(remaining / bps) : (_grepBusy ? "—" : "0s");
+            StatEta.Text = _grepBusy && !_paused && bps > 1 && remaining > 0 ? $"ETA {FormatSeconds(remaining / bps)}" : "";
         }
 
-        try
-        {
-            _proc.Refresh();
-            StatMem.Text = HumanBytes(_proc.WorkingSet64);
-            StatThreads.Text = _proc.Threads.Count.ToString();
-        }
+        try { _proc.Refresh(); StatMem.Text = HumanBytes(_proc.WorkingSet64); StatThreads.Text = _proc.Threads.Count.ToString(); }
         catch { }
 
         if (_grepBusy && !_paused && !string.IsNullOrEmpty(p.CurrentFile))
+        {
+            HeaderStatus.Text = $"Scanning · {pct * 100:F0}% · {StatSpeed.Text}";
             StatCurrent.Text = p.FilesTotal > 1
                 ? $"Scanning {p.CurrentFile} · file {p.FilesDone:N0}/{p.FilesTotal:N0} · {p.LinesScanned:N0} lines"
                 : $"Scanning {p.CurrentFile} · {p.LinesScanned:N0} lines · last match line {p.CurrentLine:N0}";
+        }
     }
 
     // ─────────────────────────── Results: selection / toolbar ────────────────
 
     List<GrepMatch> Selected() => ResultsGrid.SelectedItems.OfType<GrepMatch>().ToList();
+
+    void OnResultsSelectionChanged(object? sender, SelectionChangedEventArgs e) => UpdateToolbarState();
+
+    void UpdateToolbarState()
+    {
+        int sel = ResultsGrid.SelectedItems?.Count ?? 0;
+        int total = _grepRows.Count;
+        bool hasSel = sel > 0, hasRows = total > 0;
+        if (CopyBtn == null) return;   // called before controls are ready
+        CopyBtn.IsEnabled = RemoveBtn.IsEnabled = hasSel;
+        MoveComboBtn.IsEnabled = ExportBtn.IsEnabled = SelectAllBtn.IsEnabled =
+            InvertBtn.IsEnabled = ClearBtn.IsEnabled = hasRows;
+    }
 
     void OnSelectAll(object? sender, RoutedEventArgs e) => ResultsGrid.SelectAll();
 
@@ -353,8 +389,8 @@ public partial class MainWindow : Window
     void OnClearResults(object? sender, RoutedEventArgs e)
     {
         _grepRows.Clear();
-        EmptyTitle.Text = "Nothing to show yet";
-        EmptyHint.Text = "Open a file or folder, type what to find, and press Search. Matches appear here with the line and a highlighted preview.";
+        EmptyTitle.Text = "Start searching";
+        EmptyHint.Text = "Choose a folder or file — or drag one here — type a query, and press Search.";
         StatCurrent.Text = "Results cleared.";
     }
 
@@ -406,8 +442,7 @@ public partial class MainWindow : Window
     void OnCtxSendToSearch(object? sender, RoutedEventArgs e)
     {
         if (ResultsGrid.SelectedItem is not GrepMatch m) return;
-        var q = string.IsNullOrEmpty(m.MatchText) ? m.Line : m.MatchText;
-        SearchBox.Text = q;
+        SearchBox.Text = string.IsNullOrEmpty(m.MatchText) ? m.Line : m.MatchText;
         OnRunGrep(sender, e);
     }
 
@@ -470,7 +505,7 @@ public partial class MainWindow : Window
                 foreach (var r in rows)
                     w.WriteLine($"{Csv(r.FullPath)},{r.LineNumber},{r.LineLength},{r.Occurrences},{Csv(r.MatchText)},{Csv(r.Line)}");
                 break;
-            default: // txt
+            default:
                 foreach (var r in rows) w.WriteLine($"{r.FileName}:{r.LineNumber}: {r.Line}");
                 break;
         }
@@ -482,11 +517,9 @@ public partial class MainWindow : Window
 
     void OnMoveAllToCombo(object? sender, RoutedEventArgs e)
     {
-        // Move everything, no selection needed: every file that produced a match,
-        // or the current source file when there are no results yet.
         var files = _grepRows.Select(r => r.FullPath).Distinct().Where(File.Exists).ToList();
-        if (files.Count == 0 && _sourceIsFile && File.Exists(_sourcePath))
-            files.Add(_sourcePath);
+        if (files.Count == 0)
+            files = _sources.Where(s => !s.IsFolder && File.Exists(s.Path)).Select(s => s.Path).ToList();
         if (files.Count == 0) { StatCurrent.Text = "Nothing to send — run a search first."; return; }
         AddComboFiles(files);
         Tabs.SelectedIndex = 1;
@@ -567,8 +600,7 @@ public partial class MainWindow : Window
         FileCount.Text = _comboFiles.Count.ToString("N0");
 
         long size = 0;
-        foreach (var f in _comboFiles)
-            try { size += new FileInfo(f).Length; } catch { }
+        foreach (var f in _comboFiles) try { size += new FileInfo(f).Length; } catch { }
         SizeCount.Text = HumanBytes(size);
 
         var sb = new StringBuilder();
@@ -653,15 +685,10 @@ public partial class MainWindow : Window
         if (items == null) return;
         var paths = items.Select(i => i.Path.LocalPath).ToList();
 
-        if (Tabs.SelectedIndex == 1)   // Combo tab: add all files
-        {
+        if (Tabs.SelectedIndex == 1)
             AddComboFiles(paths.Where(File.Exists));
-        }
-        else                            // Search tab: use the first as source
-        {
-            var first = paths.FirstOrDefault(p => File.Exists(p) || Directory.Exists(p));
-            if (first != null) SetSource(first);
-        }
+        else
+            foreach (var p in paths.Where(p => File.Exists(p) || Directory.Exists(p))) AddSource(p);
     }
 
     // ──────────────────────────────── Helpers ───────────────────────────────
@@ -684,25 +711,20 @@ public partial class MainWindow : Window
     void ShowMenu(Control target, List<(string label, Action act)> items, string emptyLabel)
     {
         var menu = new MenuFlyout();
-        if (items.Count == 0)
-        {
-            menu.Items.Add(new MenuItem { Header = emptyLabel, IsEnabled = false });
-        }
+        if (items.Count == 0) menu.Items.Add(new MenuItem { Header = emptyLabel, IsEnabled = false });
         else
-        {
             foreach (var (label, act) in items)
             {
                 var mi = new MenuItem { Header = label };
                 mi.Click += (_, _) => act();
                 menu.Items.Add(mi);
             }
-        }
         menu.ShowAt(target);
     }
 
     static string ShortPath(string path)
     {
-        var name = Path.GetFileName(path);
+        var name = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, '/'));
         var dir = Path.GetFileName(Path.GetDirectoryName(path) ?? "");
         return string.IsNullOrEmpty(dir) ? name : $"{dir}/{name}";
     }
@@ -727,12 +749,7 @@ public partial class MainWindow : Window
 
     void OpenAtLine(string path, long line)
     {
-        // Best effort: open at the line in VS Code if present, else the default app.
-        try
-        {
-            if (TryStart("code", $"--goto \"{path}:{line}\"")) return;
-        }
-        catch { }
+        try { if (TryStart("code", $"--goto \"{path}:{line}\"")) return; } catch { }
         OpenInDefaultApp(path);
     }
 
